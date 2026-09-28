@@ -74,7 +74,7 @@ def render(request: Request, template: str, **ctx):
     # Pop flash from session if present
     ctx.setdefault("flash_message", request.session.pop("flash_message", None))
     ctx.setdefault("flash_type", request.session.pop("flash_type", "success"))
-    return templates.TemplateResponse(template, {"request": request, **ctx})
+    return templates.TemplateResponse(request=request, name=template, context=ctx)
 
 
 def flash(request: Request, message: str, type_: str = "success"):
