@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AFAQ Academy — Professional Academy Management System" />
+  <title>{% block title %}AFAQ Academy{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/static/css/main.css" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% block body %}{% endblock %}
+
+<div id="toast-container" class="toast-container"></div>
+
+{% if flash_message %}
+<div data-flash data-flash-message="{{ flash_message }}" data-flash-type="{{ flash_type or 'success' }}" style="display:none;"></div>
+{% endif %}
+
+<script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,120 @@
+{% extends "layout.html" %}
+{% block title %}Grades — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title">Grades</h1>
+    <p class="page-subtitle">Enter and manage grades for your courses</p>
+  </div>
+
+  <!-- COURSE SELECTOR -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-body" style="padding:16px 24px;">
+      <form method="get" action="/instructor/grades" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <label class="form-label" for="grade-course-sel" style="margin-bottom:0; white-space:nowrap;">Course:</label>
+        <select id="grade-course-sel" name="course_id" class="form-select" style="max-width:280px;" onchange="this.form.submit()">
+          <option value="">— Select course —</option>
+          {% for c in courses %}
+          <option value="{{ c[0] }}" {{ 'selected' if selected_course and selected_course[0] == c[0] else '' }}>{{ c[1] }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+
+  {% if selected_course and trainees %}
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <span class="card-title">{{ selected_course[1] }}</span>
+        <div class="text-sm text-muted" style="margin-top:4px;">Enter scores (0–100). Existing grades will be updated.</div>
+      </div>
+    </div>
+
+    <form method="post" action="/instructor/grades/save" data-loading>
+      <input type="hidden" name="course_id" value="{{ selected_course[0] }}" />
+
+      {% if form_error %}
+      <div style="padding:12px 24px;">
+        <div class="alert alert-error">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+          <span>{{ form_error }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Email</th>
+              <th>Score (0–100)</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in trainees %}
+            <tr>
+              <td>
+                <div class="flex items-center gap-3">
+                  <div class="avatar" style="background: hsl({{ (loop.index * 47) % 360 }}, 65%, 55%);">{{ t[1][0].upper() }}</div>
+                  <span class="font-medium">{{ t[1] }}</span>
+                </div>
+              </td>
+              <td class="muted text-sm">{{ t[2] }}</td>
+              <td>
+                <input
+                  type="number"
+                  name="score_{{ t[0] }}"
+                  class="score-input"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  placeholder="—"
+                  value="{{ existing_grades.get(t[0], '') }}"
+                />
+                <input type="hidden" name="trainee_{{ t[0] }}" value="{{ t[0] }}" />
+              </td>
+              <td>
+                <span class="grade-letter grade-preview"></span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card-footer" style="display:flex; justify-content:flex-end;">
+        <button type="submit" class="btn btn-primary" data-loading-text="Saving grades...">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          Save All Grades
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {% elif selected_course and not trainees %}
+  <div class="card">
+    <div class="card-body">
+      <div class="empty-state">
+        <div class="empty-title">No students enrolled</div>
+        <div class="empty-description">No students are enrolled in this course yet.</div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body">
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/></svg>
+        </div>
+        <div class="empty-title">Select a course to enter grades</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

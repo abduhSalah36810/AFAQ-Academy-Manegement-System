@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+{% block title %}Admin Dashboard — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Welcome back, {{ user.name }}. Here's what's happening at AFAQ Academy.</p>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Students</div>
+        <div class="stat-value">{{ stats.trainees }}</div>
+        <div class="stat-hint">Registered trainees</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon purple">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Instructors</div>
+        <div class="stat-value">{{ stats.instructors }}</div>
+        <div class="stat-hint">Teaching staff</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Courses</div>
+        <div class="stat-value">{{ stats.courses }}</div>
+        <div class="stat-hint">Available courses</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon amber">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Enrollments</div>
+        <div class="stat-value">{{ stats.enrollments }}</div>
+        <div class="stat-hint">Active enrollments</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS + RECENT COURSES -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px; flex-wrap:wrap;">
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Quick Actions</span>
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
+        <a href="/admin/trainees?action=create" class="btn btn-secondary" style="justify-content:flex-start;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Add Student
+        </a>
+        <a href="/admin/instructors?action=create" class="btn btn-secondary" style="justify-content:flex-start;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Add Instructor
+        </a>
+        <a href="/admin/courses?action=create" class="btn btn-secondary" style="justify-content:flex-start;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Create Course
+        </a>
+        <a href="/admin/enrollment" class="btn btn-secondary" style="justify-content:flex-start;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2m-6 9l2 2 4-4"/></svg>
+          Enroll Student
+        </a>
+        <a href="/admin/courses?action=assign" class="btn btn-secondary" style="justify-content:flex-start;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+          Assign Instructor
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Courses -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Courses Overview</span>
+        <a href="/admin/courses" class="btn btn-ghost btn-sm">View all →</a>
+      </div>
+      {% if recent_courses %}
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Instructor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for course in recent_courses %}
+            <tr>
+              <td class="font-medium">{{ course[1] }}</td>
+              <td class="muted">{{ course[2] or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body">
+        <div class="empty-state" style="padding: 24px;">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/></svg>
+          </div>
+          <div class="empty-title">No courses yet</div>
+          <a href="/admin/courses?action=create" class="btn btn-primary btn-sm">Create first course</a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

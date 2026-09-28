@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+{% block title %}Enrollment — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title">Enrollment</h1>
+    <p class="page-subtitle">Manage student course enrollments</p>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1.35fr; gap:24px; align-items:start;">
+
+    <!-- ENROLL FORM -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Enroll a Student</span>
+      </div>
+      <form method="post" action="/admin/enrollment/enroll" data-loading>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:0;">
+          {% if form_error %}
+          <div class="alert alert-error" style="margin-bottom:16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>{{ form_error }}</span>
+          </div>
+          {% endif %}
+
+          <div class="form-group">
+            <label class="form-label" for="trainee-id">Active Student</label>
+            <select id="trainee-id" name="trainee_id" class="form-select" required>
+              <option value="">— Select student —</option>
+              {% for t in trainees %}
+              <option value="{{ t[0] }}">{{ t[1] }} ({{ t[2] }})</option>
+              {% endfor %}
+            </select>
+            {% if not trainees %}
+            <span class="form-hint" style="color:var(--color-warning);">No active students found.</span>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="course-id">Active Course</label>
+            <select id="course-id" name="course_id" class="form-select" required>
+              <option value="">— Select course —</option>
+              {% for c in courses %}
+              <option value="{{ c[0] }}">{{ c[1] }}{% if c[2] %} · {{ c[2] }}{% endif %}</option>
+              {% endfor %}
+            </select>
+            {% if not courses %}
+            <span class="form-hint" style="color:var(--color-warning);">No active courses found.</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary" data-loading-text="Enrolling...">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2m-6 9l2 2 4-4"/></svg>
+            Enroll Student
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ENROLLMENTS TABLE -->
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div class="flex items-center gap-2">
+          <span class="card-title">Current Enrollments</span>
+          <span class="badge badge-neutral">{{ enrollments|length }}</span>
+        </div>
+        <div class="search-bar" style="max-width:200px;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" class="search-input" placeholder="Filter..." data-search-table="enrollments-table">
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="enrollments-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Course</th>
+              <th style="text-align:right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in enrollments %}
+            <tr>
+              <td>
+                <div class="flex items-center gap-2">
+                  <div class="avatar avatar-sm" style="background: hsl({{ (loop.index * 47) % 360 }}, 65%, 55%);">{{ e[1][0].upper() }}</div>
+                  <div>
+                    <span class="font-medium" style="display:block;">{{ e[1] }}</span>
+                    <span class="muted text-xs">{{ e[2] }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="font-medium">{{ e[4] }}</span>
+                {% if e[5] == 0 %}
+                <span class="badge badge-neutral" style="font-size:10px; margin-left:4px;">Archived</span>
+                {% endif %}
+              </td>
+              <td style="text-align:right;">
+                <form method="post" action="/admin/enrollment/unenroll" style="display:inline;" onsubmit="return confirm('Remove student {{ e[1]|escape }} from {{ e[4]|escape }}?');">
+                  <input type="hidden" name="trainee_id" value="{{ e[0] }}">
+                  <input type="hidden" name="course_id" value="{{ e[3] }}">
+                  <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">
+                    Unenroll
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr class="empty-row">
+              <td colspan="3">
+                <div class="empty-state" style="padding:24px;">
+                  <div class="empty-title">No enrollments yet</div>
+                  <div class="empty-description">Use the form to enroll a student in a course.</div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+{% block title %}My Dashboard — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title">Welcome, {{ user.name }} 👋</h1>
+    <p class="page-subtitle">Here's your learning overview at AFAQ Academy.</p>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));">
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Enrolled</div>
+        <div class="stat-value">{{ courses|length }}</div>
+        <div class="stat-hint">Courses</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Present</div>
+        <div class="stat-value">{{ present_count }}</div>
+        <div class="stat-hint">Attendance records</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon amber">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Grades</div>
+        <div class="stat-value">{{ grades|length }}</div>
+        <div class="stat-hint">Recorded scores</div>
+      </div>
+    </div>
+
+    {% if avg_score is not none %}
+    <div class="stat-card">
+      <div class="stat-icon purple">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Avg Score</div>
+        <div class="stat-value">{{ "%.0f"|format(avg_score) }}</div>
+        <div class="stat-hint">Across all courses</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- MY COURSES -->
+  {% if courses %}
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-header">
+      <span class="card-title">My Courses</span>
+      <a href="/trainee/courses" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    <div class="courses-grid" style="padding:var(--space-5);">
+      {% for course in courses %}
+      <div class="course-card" style="cursor:default;">
+        <div class="course-card-header">
+          <div class="course-avatar">{{ course[1][0].upper() }}</div>
+        </div>
+        <div class="course-name">{{ course[1] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- GRADES SUMMARY -->
+  {% if grades %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">My Grades</span>
+      <a href="/trainee/grades" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Score</th>
+            <th>Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in grades %}
+          {% set score = g[1] %}
+          {% set letter = 'A' if score >= 90 else ('B' if score >= 80 else ('C' if score >= 70 else ('D' if score >= 60 else 'F'))) %}
+          {% set grade_class = 'grade-A' if score >= 90 else ('grade-B' if score >= 80 else ('grade-C' if score >= 70 else ('grade-D' if score >= 60 else 'grade-F'))) %}
+          <tr>
+            <td class="font-medium">{{ g[0] }}</td>
+            <td>
+              <div class="flex items-center gap-3">
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill {{ 'success' if score >= 70 else ('warning' if score >= 50 else 'error') }}" style="width:{{ score }}%;"></div>
+                </div>
+                <span class="font-semibold">{{ score | int }}</span>
+              </div>
+            </td>
+            <td><span class="grade-letter {{ grade_class }}">{{ letter }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

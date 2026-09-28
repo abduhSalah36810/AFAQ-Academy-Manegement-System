@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block title %}Course Materials — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h1 class="page-title">{{ selected_course[1] }}</h1>
+      <p class="page-subtitle">Course Materials</p>
+    </div>
+    <a href="/trainee/courses" class="btn btn-secondary">Back to Courses</a>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Available Materials</h2>
+    </div>
+    {% if materials %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th style="width:100px;">Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mat in materials %}
+          <tr>
+            <td>
+              <span class="badge" style="background:var(--color-bg-alt);">{{ mat[4] | capitalize }}</span>
+            </td>
+            <td>
+              <a href="{{ mat[2] }}" target="_blank" style="color:var(--color-primary); text-decoration:none; font-weight:500;">
+                {{ mat[1] }}
+              </a>
+            </td>
+            <td>{{ mat[3] or '<span style="color:var(--color-text-muted);">No description</span>'|safe }}</td>
+            <td>
+              <a href="{{ mat[2] }}" target="_blank" class="btn btn-primary btn-sm">Open</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body">
+      <div class="empty-state" style="padding:24px 0;">
+        <div class="empty-description">No materials have been added to this course yet.</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

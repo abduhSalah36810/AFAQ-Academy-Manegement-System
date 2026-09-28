@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+{% block title %}Students — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header page-header-row">
+    <div>
+      <h1 class="page-title">Students</h1>
+      <p class="page-subtitle">{{ trainees|length }} registered student{{ 's' if trainees|length != 1 else '' }}</p>
+    </div>
+    <button class="btn btn-primary" data-modal-open="create-trainee-modal">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      Add Student
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">All Students</span>
+      <div class="search-bar">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" placeholder="Search students…" data-search-table="trainees-table">
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table" id="trainees-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in trainees %}
+          <tr style="{{ 'opacity: 0.65;' if t[3] == 0 else '' }}">
+            <td class="muted text-sm">{{ loop.index }}</td>
+            <td>
+              <div class="flex items-center gap-3">
+                <div class="avatar" style="background: hsl({{ (loop.index * 47) % 360 }}, 65%, 55%);">{{ t[1][0].upper() }}</div>
+                <div>
+                  <span class="font-medium">{{ t[1] }}</span>
+                  {% if t[3] == 0 %}
+                  <span class="text-xs muted" style="display:block;">Deactivated</span>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td class="muted">{{ t[2] }}</td>
+            <td><span class="badge badge-info">Student</span></td>
+            <td>
+              {% if t[3] == 1 %}
+              <span class="badge badge-success">Active</span>
+              {% else %}
+              <span class="badge badge-neutral">Inactive</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              <div class="flex items-center gap-2" style="justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="editTrainee({{ t[0] }}, '{{ t[1]|escape }}', '{{ t[2]|escape }}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                  Edit
+                </button>
+                <form method="post" action="/admin/users/{{ t[0] }}/toggle-status" style="display:inline;" onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if t[3] == 1 else 'reactivate' }} student {{ t[1]|escape }}?');">
+                  <input type="hidden" name="return_to" value="/admin/trainees">
+                  <button type="submit" class="btn btn-ghost btn-sm" style="color: {{ 'var(--color-error)' if t[3] == 1 else 'var(--color-success)' }};">
+                    {{ 'Deactivate' if t[3] == 1 else 'Reactivate' }}
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row">
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <div class="empty-title">No students yet</div>
+                <div class="empty-description">Add the first student to get started.</div>
+                <button class="btn btn-primary btn-sm" data-modal-open="create-trainee-modal">Add Student</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE TRAINEE MODAL -->
+<div id="create-trainee-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add New Student</span>
+      <button class="modal-close" data-modal-close="create-trainee-modal">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form method="post" action="/admin/trainees/create" data-loading>
+      <div class="modal-body">
+        {% if form_error %}
+        <div class="alert alert-error" style="margin-bottom:16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>{{ form_error }}</span>
+        </div>
+        {% endif %}
+        <div class="form-group">
+          <label class="form-label" for="t-name">Full Name</label>
+          <input id="t-name" name="name" type="text" class="form-input" placeholder="Ahmed Mohamed" required minlength="2" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="t-email">Email Address</label>
+          <input id="t-email" name="email" type="email" class="form-input" placeholder="student@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="t-password">Password</label>
+          <div class="input-wrapper">
+            <input id="t-password" name="password" type="password" class="form-input" placeholder="Min. 8 characters" required minlength="8" />
+            <button type="button" class="input-action" data-show-password="t-password">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+          <span class="form-hint">Minimum 8 characters</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close="create-trainee-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="Creating...">Create Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT TRAINEE MODAL -->
+<div id="edit-trainee-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit Student</span>
+      <button class="modal-close" data-modal-close="edit-trainee-modal">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="edit-trainee-form" method="post" action="" data-loading>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="edit-t-name">Full Name</label>
+          <input id="edit-t-name" name="name" type="text" class="form-input" required minlength="2" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-t-email">Email Address</label>
+          <input id="edit-t-email" name="email" type="email" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="edit-t-password">New Password (optional)</label>
+          <div class="input-wrapper">
+            <input id="edit-t-password" name="password" type="password" class="form-input" placeholder="Leave blank to keep current password" minlength="8" />
+            <button type="button" class="input-action" data-show-password="edit-t-password">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+          <span class="form-hint">Leave blank to retain current password</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close="edit-trainee-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="Saving...">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function editTrainee(id, name, email) {
+    document.getElementById('edit-trainee-form').action = '/admin/trainees/' + id + '/edit';
+    document.getElementById('edit-t-name').value = name;
+    document.getElementById('edit-t-email').value = email;
+    document.getElementById('edit-t-password').value = '';
+    openModal('edit-trainee-modal');
+  }
+</script>
+
+{% if show_modal %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    openModal('create-trainee-modal');
+  });
+</script>
+{% endif %}
+{% endblock %}
