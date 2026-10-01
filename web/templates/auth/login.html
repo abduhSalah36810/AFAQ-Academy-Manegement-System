@@ -31,6 +31,7 @@
 
       <!-- Login Form -->
       <form method="post" action="/login" data-loading id="login-form">
+        <input type="hidden" name="next" value="{{ next or '' }}">
         <div class="form-group">
           <label class="form-label" for="email">Email address</label>
           <div class="input-wrapper">
@@ -84,7 +85,7 @@
 
       <div class="divider"><span>Don't have an account?</span></div>
 
-      <a href="/signup" class="btn btn-secondary btn-full">
+      <a href="/signup{{ ('?next=' + next) if next else '' }}" class="btn btn-secondary btn-full">
         Create a student account
       </a>
 

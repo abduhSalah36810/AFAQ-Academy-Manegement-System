@@ -51,6 +51,7 @@ from services.submission_service import SubmissionService
 from services.grading_service import GradingService
 from services.bonus_service import BonusService
 from services import excel_service
+from services.public_service import PublicService
 
 # ── App setup ───────────────────────────────────────────────────────────────
 create_tables()
@@ -113,14 +114,117 @@ def today_str() -> str:
     return date.today().isoformat()
 
 
-# ── Root redirect ────────────────────────────────────────────────────────────
+# ── Public Organization Website ──────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    user = get_session_user(request)
-    if not user:
-        return RedirectResponse("/login", status_code=302)
-    role = user["role"]
+async def public_home(request: Request):
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        org = pub_svc.get_org_settings()
+        stats = pub_svc.get_public_stats()
+        featured_courses = pub_svc.get_featured_courses()
+        upcoming_batches = pub_svc.get_upcoming_batches()
+        completed_batches = pub_svc.get_completed_batches()
+        graduates = pub_svc.get_public_graduates()
+        gallery = pub_svc.get_public_gallery()
+        testimonials = pub_svc.get_public_testimonials()
+        return render(
+            request,
+            "public/index.html",
+            page_title=f"{org.get('org_name', 'AFAQ Academy')} — Excellence in Technology & Management",
+            active_page="home",
+            org=org,
+            org_settings=org,
+            stats=stats,
+            featured_courses=featured_courses,
+            upcoming_batches=upcoming_batches,
+            completed_batches=completed_batches,
+            graduates=graduates,
+            gallery=gallery,
+            testimonials=testimonials,
+        )
+    finally:
+        conn.close()
+
+
+@app.get("/courses/{course_id}", response_class=HTMLResponse)
+async def public_course_details(request: Request, course_id: int):
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        org = pub_svc.get_org_settings()
+        course = pub_svc.get_course_details(course_id)
+        if not course:
+            flash(request, "Course not found or not currently publicly available.", "error")
+            return RedirectResponse("/#courses", status_code=302)
+        return render(
+            request,
+            "public/course_details.html",
+            page_title=f"{course['name']} — Course Details | {org.get('org_name', 'AFAQ Academy')}",
+            active_page="courses",
+            org=org,
+            org_settings=org,
+            course=course,
+        )
+    finally:
+        conn.close()
+
+
+@app.post("/contact", response_class=HTMLResponse)
+async def submit_contact(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    subject: str = Form(...),
+    message: str = Form(...),
+    phone: str = Form(default=""),
+):
+    name = name.strip()
+    email = email.strip()
+    subject = subject.strip()
+    message = message.strip()
+    phone = phone.strip()
+
+    if not name or not email or not subject or not message:
+        flash(request, "Please fill in all required fields (Name, Email, Subject, Message).", "error")
+        return RedirectResponse("/#contact", status_code=302)
+
+    if "@" not in email or "." not in email:
+        flash(request, "Please enter a valid email address.", "error")
+        return RedirectResponse("/#contact", status_code=302)
+
+    if len(name) > 100 or len(subject) > 200 or len(message) > 5000:
+        flash(request, "One of the submitted fields exceeds maximum length limit.", "error")
+        return RedirectResponse("/#contact", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.submit_contact_message(
+            name=name,
+            email=email,
+            subject=subject,
+            message=message,
+            phone=phone
+        )
+        flash(request, "Thank you! Your message has been sent to our team. We will get back to you shortly.", "success")
+        return RedirectResponse("/#contact", status_code=302)
+    except Exception as e:
+        flash(request, f"Unable to submit message: {e}", "error")
+        return RedirectResponse("/#contact", status_code=302)
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AUTH
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _redirect_after_auth(user: dict, next_url: str | None = None) -> RedirectResponse:
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return RedirectResponse(next_url, status_code=302)
+    role = user.get("role")
     if role == "admin":
         return RedirectResponse("/admin/dashboard", status_code=302)
     if role == "instructor":
@@ -128,15 +232,12 @@ async def root(request: Request):
     return RedirectResponse("/trainee/dashboard", status_code=302)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# AUTH
-# ══════════════════════════════════════════════════════════════════════════════
-
 @app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    if get_session_user(request):
-        return RedirectResponse("/", status_code=302)
-    return render(request, "auth/login.html", page_title="Login")
+async def login_page(request: Request, next: str | None = None):
+    user = get_session_user(request)
+    if user:
+        return _redirect_after_auth(user, next)
+    return render(request, "auth/login.html", page_title="Login", next=next or "")
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -144,6 +245,7 @@ async def login_submit(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
+    next: str = Form(default=""),
 ):
     conn = get_db()
     try:
@@ -151,18 +253,19 @@ async def login_submit(
         user, message = auth.login(email, password)
         if user:
             request.session["user"] = user
-            return RedirectResponse("/", status_code=302)
+            return _redirect_after_auth(user, next)
         return render(request, "auth/login.html", page_title="Login",
-                      error=message, email=email)
+                      error=message, email=email, next=next)
     finally:
         conn.close()
 
 
 @app.get("/signup", response_class=HTMLResponse)
-async def signup_page(request: Request):
-    if get_session_user(request):
-        return RedirectResponse("/", status_code=302)
-    return render(request, "auth/signup.html", page_title="Sign Up")
+async def signup_page(request: Request, next: str | None = None):
+    user = get_session_user(request)
+    if user:
+        return _redirect_after_auth(user, next)
+    return render(request, "auth/signup.html", page_title="Sign Up", next=next or "")
 
 
 @app.post("/signup", response_class=HTMLResponse)
@@ -171,16 +274,22 @@ async def signup_submit(
     name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
+    next: str = Form(default=""),
 ):
     conn = get_db()
     try:
         auth = AuthService(conn)
         success, message = auth.signup(name, email, password)
         if success:
-            return render(request, "auth/signup.html", page_title="Sign Up",
-                          success=message)
+            user, _ = auth.login(email, password)
+            if user:
+                request.session["user"] = user
+                flash(request, "Welcome to AFAQ Academy! Your account has been created.", "success")
+                return _redirect_after_auth(user, next)
+            return render(request, "auth/login.html", page_title="Login",
+                          success=message, next=next)
         return render(request, "auth/signup.html", page_title="Sign Up",
-                      error=message, name=name, email=email)
+                      error=message, name=name, email=email, next=next)
     finally:
         conn.close()
 
@@ -188,7 +297,8 @@ async def signup_submit(
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-    return RedirectResponse("/login", status_code=302)
+    flash(request, "You have been logged out successfully.", "info")
+    return RedirectResponse("/", status_code=302)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2325,19 +2435,24 @@ async def trainee_request_enrollment(
     request: Request,
     batch_id: int,
     trainee_note: str = Form(""),
+    return_to: str = Form(""),
 ):
     user = require_role(request, "trainee")
     if not user:
-        return RedirectResponse("/login", status_code=302)
+        redirect_target = return_to if (return_to and return_to.startswith("/")) else f"/trainee/browse"
+        return RedirectResponse(f"/login?next={redirect_target}", status_code=302)
 
     conn = get_db()
     try:
         req_svc = EnrollmentRequestService(conn)
         try:
             req_svc.submit_request(batch_id, user["id"], trainee_note or None)
-            flash(request, "Enrollment request submitted. You will be notified when reviewed.", "success")
+            flash(request, "Enrollment request submitted! You will be notified once reviewed by admissions.", "success")
         except ValueError as e:
             flash(request, str(e), "error")
+
+        if return_to and return_to.startswith("/") and not return_to.startswith("//"):
+            return RedirectResponse(return_to, status_code=302)
         return RedirectResponse("/trainee/browse", status_code=302)
     finally:
         conn.close()
@@ -2777,6 +2892,236 @@ async def admin_delete_bonus(request: Request, bonus_id: int, redirect_to: str =
         except ValueError as e:
             flash(request, str(e), "error")
         return RedirectResponse(redirect_to, status_code=302)
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ADMIN — PUBLIC WEBSITE & CONTENT MANAGEMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/admin/website/settings", response_class=HTMLResponse)
+async def admin_website_settings(request: Request, tab: str = "org"):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        org = pub_svc.get_org_settings()
+        gallery_items = pub_svc.get_all_gallery_items()
+        testimonials = pub_svc.get_all_testimonials()
+        contact_messages = pub_svc.get_contact_messages()
+        return render(
+            request,
+            "admin/website_settings.html",
+            page_title="Website & Content Management",
+            active_page="website_settings",
+            org_settings=org,
+            org=org,
+            gallery_items=gallery_items,
+            testimonials=testimonials,
+            contact_messages=contact_messages,
+            active_tab=tab,
+        )
+    finally:
+        conn.close()
+
+
+@app.post("/admin/website/settings", response_class=HTMLResponse)
+async def admin_update_website_settings(
+    request: Request,
+    org_name: str = Form(...),
+    tagline: str = Form(""),
+    hero_headline: str = Form(...),
+    hero_subheadline: str = Form(""),
+    about_text: str = Form(""),
+    approach_text: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    whatsapp: str = Form(""),
+    working_hours: str = Form(""),
+    address: str = Form(""),
+    facebook_url: str = Form(""),
+    linkedin_url: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.update_org_settings(
+            org_name=org_name.strip(),
+            tagline=tagline.strip(),
+            hero_headline=hero_headline.strip(),
+            hero_subheadline=hero_subheadline.strip(),
+            about_text=about_text.strip(),
+            approach_text=approach_text.strip(),
+            email=email.strip(),
+            phone=phone.strip(),
+            whatsapp=whatsapp.strip(),
+            working_hours=working_hours.strip(),
+            address=address.strip(),
+            facebook_url=facebook_url.strip(),
+            linkedin_url=linkedin_url.strip(),
+        )
+        flash(request, "Organization settings updated successfully!", "success")
+        return RedirectResponse("/admin/website/settings?tab=org", status_code=302)
+    except Exception as e:
+        flash(request, f"Failed to update settings: {e}", "error")
+        return RedirectResponse("/admin/website/settings?tab=org", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/website/gallery/add", response_class=HTMLResponse)
+async def admin_add_gallery_item(
+    request: Request,
+    title: str = Form(...),
+    image_url: str = Form(...),
+    category: str = Form("Graduation"),
+    caption: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.add_gallery_item(
+            title=title.strip(),
+            image_url=image_url.strip(),
+            category=category.strip(),
+            caption=caption.strip(),
+            display_order=0,
+            is_visible=True
+        )
+        flash(request, "Gallery photo added successfully!", "success")
+        return RedirectResponse("/admin/website/settings?tab=gallery", status_code=302)
+    except Exception as e:
+        flash(request, f"Error adding gallery item: {e}", "error")
+        return RedirectResponse("/admin/website/settings?tab=gallery", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/website/gallery/{item_id}/delete", response_class=HTMLResponse)
+async def admin_delete_gallery_item(request: Request, item_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.delete_gallery_item(item_id)
+        flash(request, "Gallery photo removed.", "success")
+        return RedirectResponse("/admin/website/settings?tab=gallery", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/website/testimonials/add", response_class=HTMLResponse)
+async def admin_add_testimonial(
+    request: Request,
+    student_name: str = Form(...),
+    content: str = Form(...),
+    role_or_course: str = Form(""),
+    rating: int = Form(5),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.add_testimonial(
+            student_name=student_name.strip(),
+            content=content.strip(),
+            role_or_course=role_or_course.strip(),
+            rating=rating,
+            is_approved=True,
+        )
+        flash(request, "Testimonial published successfully!", "success")
+        return RedirectResponse("/admin/website/settings?tab=testimonials", status_code=302)
+    except Exception as e:
+        flash(request, f"Error publishing testimonial: {e}", "error")
+        return RedirectResponse("/admin/website/settings?tab=testimonials", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/website/testimonials/{test_id}/delete", response_class=HTMLResponse)
+async def admin_delete_testimonial(request: Request, test_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.delete_testimonial(test_id)
+        flash(request, "Testimonial deleted.", "success")
+        return RedirectResponse("/admin/website/settings?tab=testimonials", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/website/messages/{msg_id}/status", response_class=HTMLResponse)
+async def admin_update_message_status(request: Request, msg_id: int, status: str = Form(...)):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.update_contact_message_status(msg_id, status, handled_by=user["id"])
+        flash(request, f"Message status updated to {status}.", "success")
+        return RedirectResponse("/admin/website/settings?tab=messages", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/website/messages/{msg_id}/delete", response_class=HTMLResponse)
+async def admin_delete_message(request: Request, msg_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        pub_svc = PublicService(conn)
+        pub_svc.delete_contact_message(msg_id)
+        flash(request, "Message deleted.", "success")
+        return RedirectResponse("/admin/website/settings?tab=messages", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/trainees/{trainee_id}/toggle-public-profile", response_class=HTMLResponse)
+async def admin_toggle_trainee_public(
+    request: Request,
+    trainee_id: int,
+    current_val: int = Form(0),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        admin_svc = AdminService(conn)
+        new_val = 0 if current_val == 1 else 1
+        admin_svc.update_trainee_public_visibility(trainee_id, show_on_public=new_val)
+        status_text = "now visible on" if new_val == 1 else "hidden from"
+        flash(request, f"Student is {status_text} the public showcase.", "success")
+        return RedirectResponse("/admin/trainees", status_code=302)
     finally:
         conn.close()
 

@@ -189,6 +189,12 @@ def create_tables():
         cursor.execute("ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
     if "profile_image_url" not in user_cols:
         cursor.execute("ALTER TABLE users ADD COLUMN profile_image_url TEXT")
+    if "show_on_public_profile" not in user_cols:
+        cursor.execute("ALTER TABLE users ADD COLUMN show_on_public_profile INTEGER NOT NULL DEFAULT 0")
+    if "public_bio" not in user_cols:
+        cursor.execute("ALTER TABLE users ADD COLUMN public_bio TEXT")
+    if "graduation_status" not in user_cols:
+        cursor.execute("ALTER TABLE users ADD COLUMN graduation_status TEXT")
 
     # courses: add new columns
     course_cols = _col_names(cursor, "courses")
@@ -217,6 +223,14 @@ def create_tables():
         cursor.execute("ALTER TABLE courses ADD COLUMN level TEXT DEFAULT 'beginner'")
     if "language" not in course_cols:
         cursor.execute("ALTER TABLE courses ADD COLUMN language TEXT DEFAULT 'Arabic'")
+    if "price" not in course_cols:
+        cursor.execute("ALTER TABLE courses ADD COLUMN price REAL NOT NULL DEFAULT 0.0")
+    if "is_public" not in course_cols:
+        cursor.execute("ALTER TABLE courses ADD COLUMN is_public INTEGER NOT NULL DEFAULT 1")
+    if "show_price_publicly" not in course_cols:
+        cursor.execute("ALTER TABLE courses ADD COLUMN show_price_publicly INTEGER NOT NULL DEFAULT 0")
+    if "prerequisites" not in course_cols:
+        cursor.execute("ALTER TABLE courses ADD COLUMN prerequisites TEXT")
 
     # ══════════════════════════════════════════════════════════════════════════
     # NEW TABLES
@@ -519,6 +533,92 @@ def create_tables():
         )
     """)
 
+    # ── Batches: Safe Migrations ──────────────────────────────────────────────
+    batch_cols = _col_names(cursor, "batches")
+    if "is_public" not in batch_cols:
+        cursor.execute("ALTER TABLE batches ADD COLUMN is_public INTEGER NOT NULL DEFAULT 1")
+    if "price" not in batch_cols:
+        cursor.execute("ALTER TABLE batches ADD COLUMN price REAL")
+
+    # ── Organization Settings (dynamic content for public homepage) ───────────
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS organization_settings (
+            id INTEGER PRIMARY KEY,
+            org_name TEXT NOT NULL DEFAULT 'AFAQ Academy',
+            tagline TEXT DEFAULT 'Empowering the Next Generation of Tech Leaders',
+            about_text TEXT DEFAULT 'AFAQ Academy provides intensive, cohort-based practical tech education designed to bridge the gap between academic theory and real-world software engineering.',
+            approach_text TEXT DEFAULT 'Our learning experience is structured around hands-on tasks, chapter-based mastery, direct mentor evaluation, and live collaborative sessions.',
+            email TEXT DEFAULT 'contact@afaq-academy.com',
+            phone TEXT DEFAULT '+20 100 000 0000',
+            whatsapp TEXT DEFAULT '+20 100 000 0000',
+            address TEXT DEFAULT 'Cairo, Egypt',
+            working_hours TEXT DEFAULT 'Sunday - Thursday: 9:00 AM - 6:00 PM',
+            facebook_url TEXT DEFAULT '',
+            instagram_url TEXT DEFAULT '',
+            linkedin_url TEXT DEFAULT '',
+            youtube_url TEXT DEFAULT '',
+            hero_headline TEXT DEFAULT 'Transform Your Tech Career with Structured, Mentor-Led Programs',
+            hero_subheadline TEXT DEFAULT 'Join elite cohorts, build real projects, and master in-demand technologies with direct guidance from experienced industry instructors.'
+        )
+    """)
+    cursor.execute("SELECT COUNT(*) FROM organization_settings")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("""
+            INSERT INTO organization_settings (id, org_name, tagline, email, phone, address)
+            VALUES (1, 'AFAQ Academy', 'Empowering the Next Generation of Tech Leaders', 'contact@afaq-academy.com', '+20 100 000 0000', 'Cairo, Egypt')
+        """)
+
+    # ── Gallery Items (Graduation, Events, Workshops, Activities) ─────────────
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS gallery_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            image_url TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'Graduation'
+                CHECK (category IN ('Graduation', 'Courses', 'Events', 'Workshops', 'Activities')),
+            caption TEXT,
+            display_order INTEGER NOT NULL DEFAULT 0,
+            is_visible INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+
+    # ── Testimonials / Student Stories ────────────────────────────────────────
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS testimonials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_name TEXT NOT NULL,
+            role_or_course TEXT,
+            avatar_url TEXT,
+            content TEXT NOT NULL,
+            rating INTEGER NOT NULL DEFAULT 5,
+            display_order INTEGER NOT NULL DEFAULT 0,
+            is_approved INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+
+    # ── Contact Messages ──────────────────────────────────────────────────────
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS contact_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT,
+            subject TEXT NOT NULL,
+            message TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'unread'
+                CHECK (status IN ('unread', 'read', 'handled', 'archived')),
+            handled_by INTEGER,
+            handled_at TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+            FOREIGN KEY (handled_by)
+                REFERENCES users(id)
+                ON DELETE SET NULL
+        )
+    """)
+
     # ══════════════════════════════════════════════════════════════════════════
     # INDEXES
     # ══════════════════════════════════════════════════════════════════════════
@@ -551,6 +651,9 @@ def create_tables():
     connection.execute("CREATE INDEX IF NOT EXISTS idx_comp_scores_component ON component_scores(component_id)")
     connection.execute("CREATE INDEX IF NOT EXISTS idx_comp_scores_trainee ON component_scores(trainee_id)")
     connection.execute("CREATE INDEX IF NOT EXISTS idx_bonuses_trainee ON student_bonuses(trainee_id)")
+    connection.execute("CREATE INDEX IF NOT EXISTS idx_gallery_visible ON gallery_items(is_visible, display_order)")
+    connection.execute("CREATE INDEX IF NOT EXISTS idx_testimonials_approved ON testimonials(is_approved, display_order)")
+    connection.execute("CREATE INDEX IF NOT EXISTS idx_contact_status ON contact_messages(status, created_at)")
 
     connection.commit()
     connection.close()

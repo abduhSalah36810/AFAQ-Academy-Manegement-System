@@ -194,13 +194,31 @@ class AdminService:
         cursor = self.connection.cursor()
         cursor.execute(
             """
-            SELECT id, name, email, active
+            SELECT id, name, email, active,
+                   COALESCE(show_on_public_profile, 0),
+                   COALESCE(public_bio, ''),
+                   COALESCE(graduation_status, 'graduate')
             FROM users
             WHERE role = 'trainee'
             ORDER BY name
             """
         )
         return cursor.fetchall()
+
+    def update_trainee_public_visibility(self, trainee_id: int, show_on_public: int, public_bio: str = None, graduation_status: str = None):
+        """Update public showcase visibility and profile bio for a student."""
+        cursor = self.connection.cursor()
+        updates = ["show_on_public_profile = ?"]
+        params = [show_on_public]
+        if public_bio is not None:
+            updates.append("public_bio = ?")
+            params.append(public_bio.strip())
+        if graduation_status is not None:
+            updates.append("graduation_status = ?")
+            params.append(graduation_status.strip())
+        params.append(trainee_id)
+        cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ? AND role = 'trainee'", params)
+        self.connection.commit()
 
     def get_active_trainees(self):
         """Return only active trainees — for enrollment dropdowns."""
