@@ -34,11 +34,33 @@ def get_db_path() -> str:
     return str(BASE_DIR / DATABASE_NAME)
 
 
-def get_connection():
+import contextvars
+
+_request_conn: contextvars.ContextVar = contextvars.ContextVar("_request_conn", default=None)
+
+
+def get_connection(request_scoped: bool = False):
+    """
+    Return a database connection.
+    If request_scoped is True, safely reuses an active connection within the current
+    async context/request, avoiding redundant connection handshakes without any
+    cross-request concurrency risks.
+    """
+    if request_scoped:
+        conn = _request_conn.get()
+        if conn is not None:
+            try:
+                conn.execute("SELECT 1")
+                return conn
+            except Exception:
+                _request_conn.set(None)
+
     # If explicitly running tests with local test SQLite
     if os.environ.get("SQLITE_DB_PATH"):
         connection = sqlite3.connect(os.environ["SQLITE_DB_PATH"])
         connection.execute("PRAGMA foreign_keys = ON")
+        if request_scoped:
+            _request_conn.set(connection)
         return connection
 
     # If Turso Cloud database is configured in .env / environment or default fallback, use it
@@ -53,17 +75,28 @@ def get_connection():
         try:
             import libsql
             connection = libsql.connect(turso_url, auth_token=turso_token)
-            try:
-                connection.execute("PRAGMA foreign_keys = ON")
-            except Exception:
-                pass
+            if request_scoped:
+                _request_conn.set(connection)
             return connection
         except Exception as e:
             print(f"Warning: Turso connection failed, falling back to local SQLite: {e}")
 
     connection = sqlite3.connect(get_db_path())
     connection.execute("PRAGMA foreign_keys = ON")
+    if request_scoped:
+        _request_conn.set(connection)
     return connection
+
+
+def close_request_connection():
+    """Close and clear the current context's database connection if open."""
+    conn = _request_conn.get()
+    if conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        _request_conn.set(None)
 
 
 # ── Helper to get column names for a table ────────────────────────────────────

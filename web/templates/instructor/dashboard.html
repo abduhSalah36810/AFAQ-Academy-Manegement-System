@@ -1,15 +1,16 @@
 {% extends "layout.html" %}
-{% block title %}Instructor Dashboard — AFAQ Academy{% endblock %}
+{% block title %}لوحة التحكم — المحاضر — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
+  <!-- PAGE HEADER -->
   <div class="page-header">
-    <h1 class="page-title">Dashboard</h1>
-    <p class="page-subtitle">Welcome, {{ user.name }}. Here's a summary of your teaching activity.</p>
+    <h1 class="page-title">مساحة عمل المحاضر</h1>
+    <p class="page-subtitle">مرحبًا بك، {{ user.name }}. إليك ملخص لأنشطتك التدريسية ومتابعة طلابك.</p>
   </div>
 
   <!-- STAT CARDS -->
-  <div class="stat-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+  <div class="stat-grid">
     <div class="stat-card">
       <div class="stat-icon green">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -17,8 +18,9 @@
         </svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">My Courses</div>
-        <div class="stat-value">{{ courses|length }}</div>
+        <div class="stat-label">دوراتي التدريبية</div>
+        <div class="stat-value num-cell">{{ courses|length }}</div>
+        <div class="stat-hint">دورة مسندة</div>
       </div>
     </div>
 
@@ -29,8 +31,9 @@
         </svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Total Students</div>
-        <div class="stat-value">{{ total_students }}</div>
+        <div class="stat-label">إجمالي الطلاب</div>
+        <div class="stat-value num-cell">{{ total_students }}</div>
+        <div class="stat-hint">متدرب نشط</div>
       </div>
     </div>
   </div>
@@ -38,8 +41,8 @@
   <!-- MY COURSES -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">My Courses</span>
-      <a href="/instructor/courses" class="btn btn-ghost btn-sm">View all →</a>
+      <span class="card-title">الدورات التدريبية المسندة</span>
+      <a href="/instructor/courses" class="btn btn-ghost btn-sm">عرض الكل ←</a>
     </div>
     {% if courses %}
     <div class="courses-grid" style="padding: var(--space-5);">
@@ -50,8 +53,10 @@
         </div>
         <div class="course-name">{{ course[1] }}</div>
         <div class="course-instructor">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          View students
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span>عرض الطلاب المسجلين</span>
         </div>
       </a>
       {% endfor %}
@@ -60,10 +65,12 @@
     <div class="card-body">
       <div class="empty-state">
         <div class="empty-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/>
+          </svg>
         </div>
-        <div class="empty-title">No courses assigned</div>
-        <div class="empty-description">An admin needs to assign a course to you.</div>
+        <div class="empty-title">لم تُسند إليك دورات بعد</div>
+        <div class="empty-description">سيقوم مدير النظام بإسناد الدورات والدفعات إليك فور جدولتها.</div>
       </div>
     </div>
     {% endif %}

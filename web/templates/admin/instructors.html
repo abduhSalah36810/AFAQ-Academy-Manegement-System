@@ -1,25 +1,35 @@
 {% extends "layout.html" %}
-{% block title %}Instructors — AFAQ Academy{% endblock %}
+{% block title %}المحاضرون — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
+  <!-- PAGE HEADER -->
   <div class="page-header page-header-row">
     <div>
-      <h1 class="page-title">Instructors</h1>
-      <p class="page-subtitle">{{ instructors|length }} instructor{{ 's' if instructors|length != 1 else '' }} on staff</p>
+      <h1 class="page-title">المحاضرون</h1>
+      <p class="page-subtitle">{{ instructors|length }} محاضر في الهيئة التدريسية</p>
     </div>
     <button class="btn btn-primary" data-modal-open="create-instructor-modal">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-      Add Instructor
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      إضافة محاضر
     </button>
   </div>
 
+  <!-- MAIN TABLE CARD -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">All Instructors</span>
+      <div class="flex items-center gap-2">
+        <span class="card-title">قائمة المحاضرين</span>
+        <span class="badge badge-neutral num-cell">{{ instructors|length }}</span>
+      </div>
       <div class="search-bar">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" class="search-input" placeholder="Search instructors…" data-search-table="instructors-table">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" class="search-input" placeholder="البحث في المحاضرين..." data-search-table="instructors-table">
       </div>
     </div>
 
@@ -27,48 +37,50 @@
       <table class="data-table" id="instructors-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th style="text-align:right;">Actions</th>
+            <th style="width: 50px;">#</th>
+            <th>الاسم</th>
+            <th>البريد الإلكتروني</th>
+            <th>الدور</th>
+            <th>الحالة</th>
+            <th class="col-actions">الإجراءات</th>
           </tr>
         </thead>
         <tbody>
           {% for ins in instructors %}
           <tr style="{{ 'opacity: 0.65;' if ins[3] == 0 else '' }}">
-            <td class="muted text-sm">{{ loop.index }}</td>
+            <td class="muted text-sm num-cell">{{ loop.index }}</td>
             <td>
               <div class="flex items-center gap-3">
-                <div class="avatar" style="background: hsl({{ (loop.index * 67 + 200) % 360 }}, 65%, 50%);">{{ ins[1][0].upper() }}</div>
+                <div class="avatar" style="background: hsl({{ (loop.index * 67 + 200) % 360 }}, 60%, 45%);">{{ ins[1][0].upper() }}</div>
                 <div>
-                  <span class="font-medium">{{ ins[1] }}</span>
+                  <span class="font-semibold">{{ ins[1] }}</span>
                   {% if ins[3] == 0 %}
-                  <span class="text-xs muted" style="display:block;">Deactivated</span>
+                  <span class="text-xs text-error" style="display:block;">حساب معطل</span>
                   {% endif %}
                 </div>
               </div>
             </td>
-            <td class="muted">{{ ins[2] }}</td>
-            <td><span class="badge badge-primary">Instructor</span></td>
+            <td class="muted ltr-cell">{{ ins[2] }}</td>
+            <td><span class="badge badge-primary">محاضر</span></td>
             <td>
               {% if ins[3] == 1 %}
-              <span class="badge badge-success">Active</span>
+              <span class="badge badge-success">نشط</span>
               {% else %}
-              <span class="badge badge-neutral">Inactive</span>
+              <span class="badge badge-error">معطل</span>
               {% endif %}
             </td>
-            <td style="text-align:right;">
-              <div class="flex items-center gap-2" style="justify-content: flex-end;">
+            <td class="col-actions">
+              <div class="flex items-center gap-2 justify-end" style="justify-content: flex-end;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="editInstructor({{ ins[0] }}, '{{ ins[1]|escape }}', '{{ ins[2]|escape }}')">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                  Edit
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                  </svg>
+                  تعديل
                 </button>
-                <form method="post" action="/admin/users/{{ ins[0] }}/toggle-status" style="display:inline;" onsubmit="return confirm('Are you sure you want to {{ 'deactivate' if ins[3] == 1 else 'reactivate' }} instructor {{ ins[1]|escape }}?');">
+                <form method="post" action="/admin/users/{{ ins[0] }}/toggle-status" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من {{ 'تعطيل' if ins[3] == 1 else 'تفعيل' }} حساب المحاضر {{ ins[1]|escape }}؟');">
                   <input type="hidden" name="return_to" value="/admin/instructors">
                   <button type="submit" class="btn btn-ghost btn-sm" style="color: {{ 'var(--color-error)' if ins[3] == 1 else 'var(--color-success)' }};">
-                    {{ 'Deactivate' if ins[3] == 1 else 'Reactivate' }}
+                    {{ 'تعطيل' if ins[3] == 1 else 'تفعيل' }}
                   </button>
                 </form>
               </div>
@@ -79,11 +91,13 @@
             <td colspan="6">
               <div class="empty-state">
                 <div class="empty-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
                 </div>
-                <div class="empty-title">No instructors yet</div>
-                <div class="empty-description">Add the first instructor to start assigning courses.</div>
-                <button class="btn btn-primary btn-sm" data-modal-open="create-instructor-modal">Add Instructor</button>
+                <div class="empty-title">لا يوجد محاضرون حاليًا</div>
+                <div class="empty-description">ابدأ بإضافة أول محاضر في الأكاديمية لإسناد الدورات والدفعات إليه.</div>
+                <button class="btn btn-primary btn-sm" data-modal-open="create-instructor-modal">إضافة محاضر</button>
               </div>
             </td>
           </tr>
@@ -98,41 +112,50 @@
 <div id="create-instructor-modal" class="modal-overlay">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">Add New Instructor</span>
-      <button class="modal-close" data-modal-close="create-instructor-modal">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      <span class="modal-title">إضافة محاضر جديد</span>
+      <button class="modal-close" data-modal-close="create-instructor-modal" aria-label="إغلاق">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
       </button>
     </div>
     <form method="post" action="/admin/instructors/create" data-loading>
       <div class="modal-body">
         {% if form_error %}
         <div class="alert alert-error" style="margin-bottom:16px;">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
           <span>{{ form_error }}</span>
         </div>
         {% endif %}
         <div class="form-group">
-          <label class="form-label" for="i-name">Full Name</label>
-          <input id="i-name" name="name" type="text" class="form-input" placeholder="Dr. Sara Ahmed" required minlength="2" />
+          <label class="form-label" for="ins-name">الاسم الكامل <span class="text-error">*</span></label>
+          <input id="ins-name" name="name" type="text" class="form-input" placeholder="مثال: د. محمد أحمد" required minlength="2" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="i-email">Email Address</label>
-          <input id="i-email" name="email" type="email" class="form-input" placeholder="instructor@example.com" required />
+          <label class="form-label" for="ins-email">البريد الإلكتروني <span class="text-error">*</span></label>
+          <input id="ins-email" name="email" type="email" class="form-input input-ltr" placeholder="instructor@example.com" required autocomplete="email" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="i-password">Password</label>
+          <label class="form-label" for="ins-password">كلمة المرور <span class="text-error">*</span></label>
           <div class="input-wrapper">
-            <input id="i-password" name="password" type="password" class="form-input" placeholder="Min. 8 characters" required minlength="8" />
-            <button type="button" class="input-action" data-show-password="i-password">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <input id="ins-password" name="password" type="password" class="form-input input-ltr" placeholder="8 أحرف على الأقل" required minlength="8" autocomplete="new-password" />
+            <button type="button" class="input-action" data-show-password="ins-password" aria-label="إظهار أو إخفاء كلمة المرور">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
             </button>
           </div>
-          <span class="form-hint">Minimum 8 characters</span>
+          <span class="form-hint">يجب أن تحتوي كلمة المرور على 8 أحرف كحد أدنى</span>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close="create-instructor-modal">Cancel</button>
-        <button type="submit" class="btn btn-primary" data-loading-text="Creating...">Add Instructor</button>
+        <button type="button" class="btn btn-secondary" data-modal-close="create-instructor-modal">إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="جاري الإضافة...">إضافة المحاضر</button>
       </div>
     </form>
   </div>
@@ -142,35 +165,40 @@
 <div id="edit-instructor-modal" class="modal-overlay">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">Edit Instructor</span>
-      <button class="modal-close" data-modal-close="edit-instructor-modal">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      <span class="modal-title">تعديل بيانات المحاضر</span>
+      <button class="modal-close" data-modal-close="edit-instructor-modal" aria-label="إغلاق">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
       </button>
     </div>
     <form id="edit-instructor-form" method="post" action="" data-loading>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label" for="edit-i-name">Full Name</label>
-          <input id="edit-i-name" name="name" type="text" class="form-input" required minlength="2" />
+          <label class="form-label" for="edit-ins-name">الاسم الكامل <span class="text-error">*</span></label>
+          <input id="edit-ins-name" name="name" type="text" class="form-input" required minlength="2" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="edit-i-email">Email Address</label>
-          <input id="edit-i-email" name="email" type="email" class="form-input" required />
+          <label class="form-label" for="edit-ins-email">البريد الإلكتروني <span class="text-error">*</span></label>
+          <input id="edit-ins-email" name="email" type="email" class="form-input input-ltr" required autocomplete="email" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="edit-i-password">New Password (optional)</label>
+          <label class="form-label" for="edit-ins-password">كلمة المرور الجديدة (اختياري)</label>
           <div class="input-wrapper">
-            <input id="edit-i-password" name="password" type="password" class="form-input" placeholder="Leave blank to keep current password" minlength="8" />
-            <button type="button" class="input-action" data-show-password="edit-i-password">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <input id="edit-ins-password" name="password" type="password" class="form-input input-ltr" placeholder="اتركه فارغًا للاحتفاظ بالحالية" minlength="8" autocomplete="new-password" />
+            <button type="button" class="input-action" data-show-password="edit-ins-password" aria-label="إظهار أو إخفاء كلمة المرور">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
             </button>
           </div>
-          <span class="form-hint">Leave blank to retain current password</span>
+          <span class="form-hint">اترك هذا الحقل فارغًا إذا كنت لا ترغب في تغيير كلمة المرور الحالية</span>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close="edit-instructor-modal">Cancel</button>
-        <button type="submit" class="btn btn-primary" data-loading-text="Saving...">Save Changes</button>
+        <button type="button" class="btn btn-secondary" data-modal-close="edit-instructor-modal">إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="جاري الحفظ...">حفظ التغييرات</button>
       </div>
     </form>
   </div>
@@ -179,9 +207,9 @@
 <script>
   function editInstructor(id, name, email) {
     document.getElementById('edit-instructor-form').action = '/admin/instructors/' + id + '/edit';
-    document.getElementById('edit-i-name').value = name;
-    document.getElementById('edit-i-email').value = email;
-    document.getElementById('edit-i-password').value = '';
+    document.getElementById('edit-ins-name').value = name;
+    document.getElementById('edit-ins-email').value = email;
+    document.getElementById('edit-ins-password').value = '';
     openModal('edit-instructor-modal');
   }
 </script>

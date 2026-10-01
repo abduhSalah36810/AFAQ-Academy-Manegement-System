@@ -1,53 +1,59 @@
 {% extends "layout.html" %}
-{% block title %}Course Materials — AFAQ Academy{% endblock %}
+{% block title %}المواد العلمية — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
-  <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+  <div class="page-header page-header-row">
     <div>
       <h1 class="page-title">{{ selected_course[1] }}</h1>
-      <p class="page-subtitle">Course Materials</p>
+      <p class="page-subtitle">المواد العلمية والمراجع التدريبية</p>
     </div>
-    <a href="/instructor/courses" class="btn btn-secondary">Back to Courses</a>
+    <a href="/instructor/courses" class="btn btn-secondary">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7 7l-7-7 7-7"/></svg>
+      العودة إلى الدورات
+    </a>
   </div>
 
-  <div class="card mb-6">
+  <div class="card" style="margin-bottom:24px;">
     <div class="card-header">
-      <h2 class="card-title">Add New Material</h2>
+      <h2 class="card-title">إضافة مادة علمية جديدة</h2>
     </div>
     <div class="card-body">
-      <form action="/instructor/materials/add" method="POST" style="display:grid; gap:16px;">
+      <form action="/instructor/materials/add" method="POST" data-loading style="display:grid; gap:16px;">
         <input type="hidden" name="course_id" value="{{ selected_course[0] }}">
         
         <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
           <div class="form-group">
-            <label class="form-label">Material Title</label>
-            <input type="text" name="title" class="form-input" required placeholder="e.g. Week 1 Slides">
+            <label class="form-label">عنوان المادة العلمية</label>
+            <input type="text" name="title" class="form-input" required placeholder="مثال: شرائح الأسبوع الأول">
           </div>
           <div class="form-group">
-            <label class="form-label">Material Type</label>
-            <select name="material_type" class="form-input" required>
-              <option value="link">General Link</option>
-              <option value="video">Video (YouTube/Vimeo)</option>
-              <option value="document">Document (PDF/Doc)</option>
-              <option value="github">GitHub Repository</option>
-              <option value="drive">Google Drive</option>
+            <label class="form-label">نوع المادة</label>
+            <select name="material_type" class="form-select" required>
+              <option value="link">رابط عام (Link)</option>
+              <option value="video">فيديو (YouTube/Vimeo)</option>
+              <option value="document">مستند (PDF/Doc)</option>
+              <option value="github">مستودع كود (GitHub)</option>
+              <option value="drive">ملف سحابي (Google Drive)</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">URL Address</label>
-          <input type="url" name="url" class="form-input" required placeholder="https://...">
+          <label class="form-label">عنوان الرابط (URL)</label>
+          <input type="url" name="url" class="form-input ltr-cell" required placeholder="https://..." dir="ltr">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Description (Optional)</label>
-          <textarea name="description" class="form-input" rows="2" placeholder="Brief details about this material..."></textarea>
+          <label class="form-label">الوصف (اختياري)</label>
+          <textarea name="description" class="form-input" rows="2" placeholder="نبذة مختصرة عن هذا المحتوى..."></textarea>
         </div>
 
         <div style="display:flex; justify-content:flex-end;">
-          <button type="submit" class="btn btn-primary">Add Material</button>
+          <button type="submit" class="btn btn-primary" data-loading-text="جاري الإضافة...">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            إضافة المادة
+          </button>
         </div>
       </form>
     </div>
@@ -55,37 +61,40 @@
 
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">Existing Materials</h2>
+      <h2 class="card-title">المواد العلمية المتاحة</h2>
     </div>
     {% if materials %}
-    <div class="table-responsive">
-      <table class="table">
+    <div class="table-wrapper">
+      <table class="data-table">
         <thead>
           <tr>
-            <th>Type</th>
-            <th>Title</th>
-            <th>Description</th>
-            <th style="width:100px;">Actions</th>
+            <th style="width:120px;">النوع</th>
+            <th>العنوان</th>
+            <th>الوصف</th>
+            <th class="col-actions" style="width:80px;">إجراءات</th>
           </tr>
         </thead>
         <tbody>
           {% for mat in materials %}
           <tr>
             <td>
-              <span class="badge" style="background:var(--color-bg-alt);">{{ mat[4] | capitalize }}</span>
+              <span class="badge badge-neutral">
+                {{ 'رابط' if mat[4] == 'link' else ('فيديو' if mat[4] == 'video' else ('مستند' if mat[4] == 'document' else ('GitHub' if mat[4] == 'github' else ('Drive' if mat[4] == 'drive' else mat[4])))) }}
+              </span>
             </td>
             <td>
-              <a href="{{ mat[2] }}" target="_blank" style="color:var(--color-primary); text-decoration:none; font-weight:500;">
+              <a href="{{ mat[2] }}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                 {{ mat[1] }}
               </a>
             </td>
-            <td>{{ mat[3] or '<span style="color:var(--color-text-muted);">No description</span>'|safe }}</td>
-            <td>
-              <form action="/instructor/materials/delete" method="POST" onsubmit="return confirm('Delete this material?');">
+            <td>{{ mat[3] or '<span class="muted text-sm">—</span>'|safe }}</td>
+            <td class="col-actions">
+              <form action="/instructor/materials/delete" method="POST" onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة العلمية؟');" style="display:inline;">
                 <input type="hidden" name="material_id" value="{{ mat[0] }}">
                 <input type="hidden" name="course_id" value="{{ selected_course[0] }}">
-                <button type="submit" class="btn btn-sm" style="color:var(--color-danger); background:transparent; border:none; cursor:pointer; padding:4px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-danger); padding:4px 8px;" title="حذف">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </form>
             </td>
@@ -97,7 +106,7 @@
     {% else %}
     <div class="card-body">
       <div class="empty-state" style="padding:24px 0;">
-        <div class="empty-description">No materials have been added to this course yet.</div>
+        <div class="empty-description">لم تتم إضافة أي مواد علمية لهذه الدورة التدريبية بعد.</div>
       </div>
     </div>
     {% endif %}

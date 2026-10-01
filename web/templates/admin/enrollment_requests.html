@@ -1,68 +1,71 @@
 {% extends "layout.html" %}
-{% block title %}Enrollment Requests — {{ batch[2] }} — AFAQ Academy{% endblock %}
+{% block title %}طلبات التسجيل — {{ batch[2] }} — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
+  <!-- PAGE HEADER -->
   <div class="page-header page-header-row">
     <div>
-      <div class="breadcrumb-nav">
+      <div class="topbar-breadcrumb" style="margin-bottom: 6px;">
         <a href="/admin/batches/{{ batch[0] }}">{{ batch[2] }}</a>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-        <span>Enrollment Requests</span>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        <span>طلبات التسجيل</span>
       </div>
-      <h1 class="page-title">Enrollment Requests</h1>
-      <p class="page-subtitle">{{ requests|length }} request{{ 's' if requests|length != 1 else '' }}</p>
+      <h1 class="page-title">طلبات الانضمام والتسجيل</h1>
+      <p class="page-subtitle">{{ requests|length }} طلب تسجيل لهذه الدفعة</p>
     </div>
   </div>
 
   {% if flash_message %}
-  <div class="alert alert-{{ flash_type }}">{{ flash_message }}</div>
+  <div class="alert alert-{{ flash_type }}" style="margin-bottom: 16px;">{{ flash_message }}</div>
   {% endif %}
 
   <!-- Filter Tabs -->
-  <div style="display:flex;gap:8px;margin-bottom:20px;">
+  <div class="flex gap-2" style="margin-bottom: 20px; flex-wrap: wrap;">
     <a href="?status=pending" class="btn {{ 'btn-primary' if current_status=='pending' else 'btn-secondary' }} btn-sm">
-      Pending {% if pending_count > 0 %}<span class="badge badge-warning" style="margin-left:4px;">{{ pending_count }}</span>{% endif %}
+      قيد الانتظار {% if pending_count > 0 %}<span class="badge badge-warning num-cell" style="margin-right:4px;">{{ pending_count }}</span>{% endif %}
     </a>
-    <a href="?status=approved" class="btn {{ 'btn-primary' if current_status=='approved' else 'btn-secondary' }} btn-sm">Approved</a>
-    <a href="?status=rejected" class="btn {{ 'btn-primary' if current_status=='rejected' else 'btn-secondary' }} btn-sm">Rejected</a>
-    <a href="?" class="btn {{ 'btn-primary' if not current_status else 'btn-secondary' }} btn-sm">All</a>
+    <a href="?status=approved" class="btn {{ 'btn-primary' if current_status=='approved' else 'btn-secondary' }} btn-sm">المقبولة</a>
+    <a href="?status=rejected" class="btn {{ 'btn-primary' if current_status=='rejected' else 'btn-secondary' }} btn-sm">المرفوضة</a>
+    <a href="?" class="btn {{ 'btn-primary' if not current_status else 'btn-secondary' }} btn-sm">جميع الطلبات</a>
   </div>
 
   {% if requests %}
   <div class="card">
-    <div class="card-body" style="padding:0;">
-      <table class="table">
+    <div class="table-wrapper">
+      <table class="data-table">
         <thead>
           <tr>
-            <th>Student</th>
-            <th>Email</th>
-            <th>Requested</th>
-            <th>Status</th>
-            <th>Note</th>
-            <th>Actions</th>
+            <th>المتدرب</th>
+            <th>البريد الإلكتروني</th>
+            <th>تاريخ الطلب</th>
+            <th>الحالة</th>
+            <th>الملاحظات</th>
+            <th class="col-actions">الإجراءات</th>
           </tr>
         </thead>
         <tbody>
           {% for r in requests %}
           <tr>
-            <td style="font-weight:500;">{{ r[5] }}</td>
-            <td class="muted">{{ r[6] }}</td>
-            <td class="muted" style="font-size:0.82rem;">{{ r[9][:16] if r[9] else '' }}</td>
+            <td class="font-semibold">{{ r[5] }}</td>
+            <td class="muted ltr-cell">{{ r[6] }}</td>
+            <td class="muted text-sm date-cell">{{ r[9][:16] if r[9] else '—' }}</td>
             <td>
-              <span class="badge {{ 'badge-warning' if r[7]=='pending' else ('badge-success' if r[7]=='approved' else 'badge-neutral') }}">
-                {{ r[7].capitalize() }}
+              <span class="badge {{ 'badge-warning' if r[7]=='pending' else ('badge-success' if r[7]=='approved' else 'badge-error') }}">
+                {{ 'قيد الانتظار' if r[7]=='pending' else ('مقبول' if r[7]=='approved' else 'مرفوض') }}
               </span>
             </td>
-            <td class="muted" style="font-size:0.82rem;">{{ r[8] or '—' }}</td>
-            <td>
+            <td class="muted text-sm">{{ r[8] or '—' }}</td>
+            <td class="col-actions">
               {% if r[7] == 'pending' %}
               <div class="flex gap-2">
-                <form method="post" action="/admin/enrollment-requests/{{ r[0] }}/approve">
-                  <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                <form method="post" action="/admin/enrollment-requests/{{ r[0] }}/approve" data-loading style="display:inline;">
+                  <button type="submit" class="btn btn-success btn-sm">قبول</button>
                 </form>
-                <form method="post" action="/admin/enrollment-requests/{{ r[0] }}/reject">
-                  <button type="submit" class="btn btn-secondary btn-sm">Reject</button>
+                <form method="post" action="/admin/enrollment-requests/{{ r[0] }}/reject" data-loading style="display:inline;">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="color:var(--color-error);">رفض</button>
                 </form>
               </div>
               {% else %}
@@ -79,8 +82,8 @@
   <div class="card">
     <div class="card-body">
       <div class="empty-state">
-        <div class="empty-title">No requests</div>
-        <div class="empty-description">No enrollment requests match the current filter.</div>
+        <div class="empty-title">لا توجد طلبات تسجيل</div>
+        <div class="empty-description">لا توجد طلبات تطابق عامل التصفية المحدد حاليًا.</div>
       </div>
     </div>
   </div>

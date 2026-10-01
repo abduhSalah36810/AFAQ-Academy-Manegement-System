@@ -1,56 +1,68 @@
 {% extends "layout.html" %}
-{% block title %}Chapters — {{ course[1] }} — AFAQ Academy{% endblock %}
+{% block title %}الفصول والمهام — {{ course[1] }} — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
+  <!-- PAGE HEADER -->
   <div class="page-header page-header-row">
     <div>
-      <div class="breadcrumb-nav">
+      <div class="topbar-breadcrumb" style="margin-bottom: 6px;">
         {% if user.role == "admin" %}
-        <a href="/admin/courses">Courses</a>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="/admin/courses">الدورات التدريبية</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
         <a href="/admin/courses/{{ course[0] }}/batches">{{ course[1] }}</a>
         {% else %}
-        <a href="/instructor/batches">Batches</a>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="/instructor/batches">الدفعات</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
         <span>{{ course[1] }}</span>
         {% endif %}
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-        <span>Chapters</span>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        <span>الفصول والمهام</span>
       </div>
-      <h1 class="page-title">Chapters &amp; Tasks</h1>
-      <p class="page-subtitle">{{ chapters|length }} chapter{{ 's' if chapters|length != 1 else '' }}</p>
+      <h1 class="page-title">الفصول والمحتوى التعليمي</h1>
+      <p class="page-subtitle">{{ chapters|length }} فصول تعليمية لدورة {{ course[1] }}</p>
     </div>
-    <button class="btn btn-primary" data-modal-open="add-chapter-modal">+ Add Chapter</button>
+    <button class="btn btn-primary" data-modal-open="add-chapter-modal">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      إضافة فصل
+    </button>
   </div>
 
   {% if flash_message %}
-  <div class="alert alert-{{ flash_type }}">{{ flash_message }}</div>
+  <div class="alert alert-{{ flash_type }}" style="margin-bottom: 16px;">{{ flash_message }}</div>
   {% endif %}
 
   {% if chapters %}
   {% for ch in chapters %}
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+  <div class="card" style="margin-bottom: 16px;">
+    <div class="card-header" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
       <div>
-        <h3 class="card-title" style="font-size:1rem;">
-          <span class="badge badge-info" style="margin-right:8px;">Ch {{ ch[4] + 1 }}</span>
+        <h3 class="card-title" style="font-size:15px;">
+          <span class="badge badge-info num-cell" style="margin-left:8px;">فصل {{ ch[4] + 1 }}</span>
           {{ ch[2] }}
         </h3>
-        {% if ch[3] %}<p class="muted" style="font-size:0.83rem;margin-top:2px;">{{ ch[3] }}</p>{% endif %}
+        {% if ch[3] %}<p class="muted text-sm" style="margin-top:2px;">{{ ch[3] }}</p>{% endif %}
       </div>
       <div class="flex gap-2">
-        <button class="btn btn-ghost btn-sm"
+        <button class="btn btn-secondary btn-sm"
           onclick="editChapter({{ ch[0] }}, '{{ ch[2]|e }}', '{{ (ch[3] or '')|e }}', {{ ch[4] }})">
-          Edit
+          تعديل
         </button>
         <form method="post" action="/admin/chapters/{{ ch[0] }}/delete"
-          onsubmit="return confirm('Delete chapter {{ ch[2]|e }}?');">
-          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Delete</button>
+          onsubmit="return confirm('هل أنت متأكد من حذف فصل {{ ch[2]|e }}؟');" style="display:inline;" data-loading>
+          <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">حذف</button>
         </form>
         <button class="btn btn-primary btn-sm"
           onclick="openAddTask({{ ch[0] }}, '{{ ch[2]|e }}')">
-          + Task
+          + مهمة
         </button>
       </div>
     </div>
@@ -58,28 +70,46 @@
     <!-- Tasks in this chapter -->
     {% set chapter_tasks = tasks_by_chapter.get(ch[0], []) %}
     {% if chapter_tasks %}
-    <div class="card-body" style="padding:0;">
-      <table class="table">
-        <thead><tr><th>#</th><th>Task</th><th>Type</th><th>Due Date</th><th>Max Score</th><th>Required</th><th></th></tr></thead>
+    <div class="table-wrapper" style="border:none; border-radius:0; box-shadow:none; margin-bottom:0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:40px;">#</th>
+            <th>المهمة</th>
+            <th>النوع</th>
+            <th>تاريخ التسليم</th>
+            <th>الدرجة القصوى</th>
+            <th>إلزامي</th>
+            <th class="col-actions">الإجراءات</th>
+          </tr>
+        </thead>
         <tbody>
           {% for t in chapter_tasks %}
           <tr>
-            <td>{{ loop.index }}</td>
-            <td style="font-weight:500;">{{ t[4] }}</td>
-            <td><span class="badge badge-neutral">{{ t[6] }}</span></td>
-            <td class="muted">{{ t[7] or '—' }}</td>
-            <td>{{ t[8] }}</td>
+            <td class="muted text-sm num-cell">{{ loop.index }}</td>
+            <td class="font-semibold">{{ t[4] }}</td>
+            <td>
+              <span class="badge badge-neutral">
+                {% if t[6] == 'assignment' %}واجب عملي
+                {% elif t[6] == 'quiz' %}اختبار قصير
+                {% elif t[6] == 'project' %}مشروع
+                {% elif t[6] == 'reading' %}قراءة وتكليف
+                {% else %}{{ t[6] }}{% endif %}
+              </span>
+            </td>
+            <td class="muted text-sm date-cell">{{ t[7] or '—' }}</td>
+            <td class="num-cell">{{ t[8] }}</td>
             <td>
               {% if t[9] %}
-              <span style="color:var(--color-success);">✓</span>
+              <span class="badge badge-success">نعم</span>
               {% else %}
-              <span class="muted">—</span>
+              <span class="muted text-sm">اختياري</span>
               {% endif %}
             </td>
-            <td>
+            <td class="col-actions">
               <form method="post" action="/admin/tasks/{{ t[0] }}/delete"
-                onsubmit="return confirm('Delete task?');" style="display:inline;">
-                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Delete</button>
+                onsubmit="return confirm('هل أنت متأكد من حذف هذه المهمة؟');" style="display:inline;" data-loading>
+                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">حذف</button>
               </form>
             </td>
           </tr>
@@ -89,7 +119,7 @@
     </div>
     {% else %}
     <div class="card-body">
-      <p class="muted" style="font-size:0.85rem;">No tasks yet in this chapter.</p>
+      <p class="muted text-sm">لا توجد مهام أو واجبات مضافة في هذا الفصل حتى الآن.</p>
     </div>
     {% endif %}
   </div>
@@ -99,11 +129,13 @@
     <div class="card-body">
       <div class="empty-state">
         <div class="empty-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+          </svg>
         </div>
-        <div class="empty-title">No chapters yet</div>
-        <div class="empty-description">Organize your course content into chapters.</div>
-        <button class="btn btn-primary" data-modal-open="add-chapter-modal">Add First Chapter</button>
+        <div class="empty-title">لا توجد فصول تعليمية بعد</div>
+        <div class="empty-description">قسّم محتوى الدورة التدريبية إلى فصول ووحدات دراسية لتنظيم المهام.</div>
+        <button class="btn btn-primary" data-modal-open="add-chapter-modal">إضافة أول فصل</button>
       </div>
     </div>
   </div>
@@ -114,23 +146,23 @@
 <div id="add-chapter-modal" class="modal-overlay" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title">Add Chapter</h2>
-      <button class="modal-close" data-modal-close>✕</button>
+      <h2 class="modal-title">إضافة فصل تعليمي</h2>
+      <button class="modal-close" data-modal-close aria-label="إغلاق">✕</button>
     </div>
-    <form method="post" action="/admin/courses/{{ course[0] }}/chapters/create">
+    <form method="post" action="/admin/courses/{{ course[0] }}/chapters/create" data-loading>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label" for="ch-title">Chapter Title *</label>
-          <input id="ch-title" name="title" type="text" class="form-input" placeholder="e.g. Introduction" required>
+          <label class="form-label" for="ch-title">عنوان الفصل <span class="text-error">*</span></label>
+          <input id="ch-title" name="title" type="text" class="form-input" placeholder="مثال: مقدمة في المفاهيم الأساسية" required>
         </div>
         <div class="form-group">
-          <label class="form-label" for="ch-desc">Description</label>
-          <textarea id="ch-desc" name="description" class="form-input" rows="2"></textarea>
+          <label class="form-label" for="ch-desc">الوصف والأهداف</label>
+          <textarea id="ch-desc" name="description" class="form-textarea" rows="2"></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn-primary">Add Chapter</button>
+        <button type="button" class="btn btn-secondary" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="جاري الإضافة...">إضافة الفصل</button>
       </div>
     </form>
   </div>
@@ -140,27 +172,27 @@
 <div id="edit-chapter-modal" class="modal-overlay" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title">Edit Chapter</h2>
-      <button class="modal-close" data-modal-close>✕</button>
+      <h2 class="modal-title">تعديل بيانات الفصل</h2>
+      <button class="modal-close" data-modal-close aria-label="إغلاق">✕</button>
     </div>
-    <form method="post" id="edit-chapter-form" action="">
+    <form method="post" id="edit-chapter-form" action="" data-loading>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label" for="edit-ch-title">Chapter Title *</label>
+          <label class="form-label" for="edit-ch-title">عنوان الفصل <span class="text-error">*</span></label>
           <input id="edit-ch-title" name="title" type="text" class="form-input" required>
         </div>
         <div class="form-group">
-          <label class="form-label" for="edit-ch-desc">Description</label>
-          <textarea id="edit-ch-desc" name="description" class="form-input" rows="2"></textarea>
+          <label class="form-label" for="edit-ch-desc">الوصف</label>
+          <textarea id="edit-ch-desc" name="description" class="form-textarea" rows="2"></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label" for="edit-ch-order">Order (0-indexed)</label>
-          <input id="edit-ch-order" name="order_index" type="number" class="form-input" min="0">
+          <label class="form-label" for="edit-ch-order">ترتيب الظهور (يبدأ من 0)</label>
+          <input id="edit-ch-order" name="order_index" type="number" class="form-input num-cell" min="0">
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-secondary" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="جاري الحفظ...">حفظ التغييرات</button>
       </div>
     </form>
   </div>
@@ -170,52 +202,52 @@
 <div id="add-task-modal" class="modal-overlay" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title">Add Task to <span id="task-chapter-name"></span></h2>
-      <button class="modal-close" data-modal-close>✕</button>
+      <h2 class="modal-title">إضافة مهمة إلى: <span id="task-chapter-name"></span></h2>
+      <button class="modal-close" data-modal-close aria-label="إغلاق">✕</button>
     </div>
-    <form method="post" action="/admin/courses/{{ course[0] }}/tasks/create">
+    <form method="post" action="/admin/courses/{{ course[0] }}/tasks/create" data-loading>
       <input type="hidden" name="chapter_id" id="task-chapter-id">
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label" for="task-title">Task Title *</label>
+          <label class="form-label" for="task-title">عنوان المهمة <span class="text-error">*</span></label>
           <input id="task-title" name="title" type="text" class="form-input" required>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="task-type">Type</label>
+            <label class="form-label" for="task-type">نوع المهمة</label>
             <select id="task-type" name="task_type" class="form-select">
-              <option value="assignment">Assignment</option>
-              <option value="quiz">Quiz</option>
-              <option value="project">Project</option>
-              <option value="reading">Reading</option>
-              <option value="other">Other</option>
+              <option value="assignment">واجب عملي</option>
+              <option value="quiz">اختبار قصير</option>
+              <option value="project">مشروع تطبيقي</option>
+              <option value="reading">قراءة وتكليف</option>
+              <option value="other">أخرى</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="task-max">Max Score</label>
-            <input id="task-max" name="max_score" type="number" class="form-input" value="100" min="1" step="0.5">
+            <label class="form-label" for="task-max">الدرجة القصوى</label>
+            <input id="task-max" name="max_score" type="number" class="form-input num-cell" value="100" min="1" step="0.5">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="task-due">Due Date</label>
-            <input id="task-due" name="due_date" type="date" class="form-input">
+            <label class="form-label" for="task-due">تاريخ التسليم الأخير</label>
+            <input id="task-due" name="due_date" type="date" class="form-input date-cell">
           </div>
-          <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px;">
+          <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:6px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
               <input type="checkbox" name="is_required" value="1" checked style="width:16px;height:16px;">
-              <span class="form-label" style="margin:0;">Required</span>
+              <span class="form-label" style="margin:0;">مهمة إلزامية لاجتياز الدورة</span>
             </label>
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label" for="task-desc">Description</label>
-          <textarea id="task-desc" name="description" class="form-input" rows="2"></textarea>
+          <label class="form-label" for="task-desc">تفاصيل وتوجيهات المهمة</label>
+          <textarea id="task-desc" name="description" class="form-textarea" rows="2"></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn-primary">Add Task</button>
+        <button type="button" class="btn btn-secondary" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="جاري الإضافة...">إضافة المهمة</button>
       </div>
     </form>
   </div>

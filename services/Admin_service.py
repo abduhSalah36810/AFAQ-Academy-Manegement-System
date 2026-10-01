@@ -205,6 +205,24 @@ class AdminService:
         )
         return cursor.fetchall()
 
+    def get_user_counts_by_role(self) -> dict:
+        """Return a dict mapping role -> total count in one database query."""
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT role, COUNT(*) FROM users GROUP BY role")
+        return {row[0]: row[1] for row in cursor.fetchall()}
+
+    def count_trainees(self) -> int:
+        """Return total count of trainees."""
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'trainee'")
+        return cursor.fetchone()[0]
+
+    def count_instructors(self) -> int:
+        """Return total count of instructors."""
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'instructor'")
+        return cursor.fetchone()[0]
+
     def update_trainee_public_visibility(self, trainee_id: int, show_on_public: int, public_bio: str = None, graduation_status: str = None):
         """Update public showcase visibility and profile bio for a student."""
         cursor = self.connection.cursor()

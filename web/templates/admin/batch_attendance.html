@@ -1,52 +1,58 @@
 {% extends "layout.html" %}
-{% block title %}Attendance — {{ batch[2] }} — AFAQ Academy{% endblock %}
+{% block title %}سجل الحضور — {{ batch[2] }} — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
+  <!-- PAGE HEADER -->
   <div class="page-header page-header-row">
     <div>
-      <div class="breadcrumb-nav">
+      <div class="topbar-breadcrumb" style="margin-bottom: 6px;">
         {% if user.role == "admin" %}
         <a href="/admin/batches/{{ batch[0] }}">{{ batch[2] }}</a>
         {% else %}
         <a href="/instructor/batches">{{ batch[2] }}</a>
         {% endif %}
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-        <span>Attendance</span>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        <span>سجل الحضور</span>
       </div>
-      <h1 class="page-title">Batch Attendance</h1>
+      <h1 class="page-title">رصد حضور الدفعة</h1>
+      <p class="page-subtitle">تسجيل الحضور الجماعي لدفعة: {{ batch[2] }}</p>
     </div>
     <div class="flex gap-2">
       <a href="{{ '/admin' if user.role == 'admin' else '/instructor' }}/batches/{{ batch[0] }}/export-attendance" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        Export Excel (.xlsx)
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        تصدير إكسيل (.xlsx)
       </a>
     </div>
   </div>
 
   {% if flash_message %}
-  <div class="alert alert-{{ flash_type }}">{{ flash_message }}</div>
+  <div class="alert alert-{{ flash_type }}" style="margin-bottom: 16px;">{{ flash_message }}</div>
   {% endif %}
 
   <!-- Record Attendance Form -->
   <div class="card" style="margin-bottom:20px;">
     <div class="card-header">
-      <h3 class="card-title">Record Attendance</h3>
+      <span class="card-title">رصد الحضور الجماعي</span>
     </div>
     <div class="card-body">
-      <form method="post" action="{{ '/admin' if user.role == 'admin' else '/instructor' }}/batches/{{ batch[0] }}/attendance/record">
-        <div class="flex gap-3 items-end" style="flex-wrap:wrap;margin-bottom:16px;">
-          <div class="form-group" style="margin:0;">
-            <label class="form-label" for="att-date">Date *</label>
-            <input id="att-date" name="date" type="date" class="form-input" value="{{ today }}" required>
+      <form method="post" action="{{ '/admin' if user.role == 'admin' else '/instructor' }}/batches/{{ batch[0] }}/attendance/record" data-loading>
+        <div class="flex gap-4 items-end" style="flex-wrap:wrap; margin-bottom:16px;">
+          <div class="form-group" style="margin:0; min-width: 180px;">
+            <label class="form-label" for="att-date">التاريخ <span class="text-error">*</span></label>
+            <input id="att-date" name="date" type="date" class="form-input date-cell" value="{{ today }}" required>
           </div>
           {% if sessions %}
-          <div class="form-group" style="margin:0;">
-            <label class="form-label" for="att-session">Session (optional)</label>
+          <div class="form-group" style="margin:0; min-width: 240px;">
+            <label class="form-label" for="att-session">الجلسة التدريبية (اختياري)</label>
             <select id="att-session" name="session_id" class="form-select">
-              <option value="">— Not linked to session —</option>
+              <option value="">— غير مرتبط بجلسة محددة —</option>
               {% for s in sessions %}
-              <option value="{{ s[0] }}">Session {{ s[3] }}: {{ s[2] }}</option>
+              <option value="{{ s[0] }}">الجلسة {{ s[3] }}: {{ s[2] }}</option>
               {% endfor %}
             </select>
           </div>
@@ -54,22 +60,22 @@
         </div>
 
         {% if trainees %}
-        <div class="table-responsive">
-          <table class="table">
+        <div class="table-wrapper">
+          <table class="data-table">
             <thead>
               <tr>
-                <th>Student</th>
-                <th>Present</th>
-                <th>Absent</th>
-                <th>Late</th>
-                <th>Excused</th>
-                <th>Notes</th>
+                <th>المتدرب</th>
+                <th style="text-align:center;">حاضر</th>
+                <th style="text-align:center;">غائب</th>
+                <th style="text-align:center;">متأخر</th>
+                <th style="text-align:center;">مستأذن</th>
+                <th>ملاحظات</th>
               </tr>
             </thead>
             <tbody>
               {% for t in trainees %}
               <tr>
-                <td style="font-weight:500;">{{ t[1] }}</td>
+                <td class="font-semibold">{{ t[1] }}</td>
                 {% for status in ['present', 'absent', 'late', 'excused'] %}
                 <td style="text-align:center;">
                   <input type="radio" name="status_{{ t[0] }}" value="{{ status }}"
@@ -79,7 +85,7 @@
                 {% endfor %}
                 <td>
                   <input type="text" name="notes_{{ t[0] }}" class="form-input"
-                    style="font-size:0.82rem;padding:4px 8px;" placeholder="Optional note">
+                    style="font-size:12.5px; padding:4px 10px;" placeholder="ملاحظات اختيارية">
                 </td>
               </tr>
               {% endfor %}
@@ -87,11 +93,11 @@
           </table>
         </div>
         <div style="margin-top:16px;">
-          <button type="submit" class="btn btn-primary">Save Attendance</button>
+          <button type="submit" class="btn btn-primary" data-loading-text="جاري الحفظ...">حفظ الحضور</button>
         </div>
         {% else %}
         <div class="empty-state">
-          <div class="empty-title">No students enrolled</div>
+          <div class="empty-title">لا يوجد طلاب مسجلون في هذه الدفعة</div>
         </div>
         {% endif %}
       </form>
@@ -102,36 +108,36 @@
   {% if summary %}
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title">Attendance Summary</h3>
+      <span class="card-title">ملخص الحضور التراكمي للدفعة</span>
     </div>
-    <div class="card-body" style="padding:0;">
-      <table class="table">
+    <div class="table-wrapper">
+      <table class="data-table">
         <thead>
           <tr>
-            <th>Student</th>
-            <th>Total</th>
-            <th>Present</th>
-            <th>Absent</th>
-            <th>Late</th>
-            <th>Excused</th>
-            <th>Rate</th>
+            <th>المتدرب</th>
+            <th class="num-cell">الإجمالي</th>
+            <th class="num-cell">حاضر</th>
+            <th class="num-cell">غائب</th>
+            <th class="num-cell">متأخر</th>
+            <th class="num-cell">مستأذن</th>
+            <th>نسبة الحضور</th>
           </tr>
         </thead>
         <tbody>
           {% for s in summary %}
           <tr>
-            <td style="font-weight:500;">{{ s[1] }}</td>
-            <td>{{ s[2] }}</td>
-            <td style="color:var(--color-success);">{{ s[3] }}</td>
-            <td style="color:var(--color-error);">{{ s[4] }}</td>
-            <td style="color:var(--color-warning);">{{ s[5] }}</td>
-            <td class="muted">{{ s[6] }}</td>
+            <td class="font-semibold">{{ s[1] }}</td>
+            <td class="num-cell">{{ s[2] }}</td>
+            <td class="num-cell text-success font-semibold">{{ s[3] }}</td>
+            <td class="num-cell text-error font-semibold">{{ s[4] }}</td>
+            <td class="num-cell text-warning font-semibold">{{ s[5] }}</td>
+            <td class="num-cell muted">{{ s[6] }}</td>
             <td>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div style="flex:1;background:var(--color-border);border-radius:4px;height:6px;min-width:60px;">
-                  <div style="width:{{ s[7] }}%;background:var(--color-success);height:6px;border-radius:4px;"></div>
+              <div class="flex items-center gap-2">
+                <div class="progress-bar-wrap" style="min-width:70px;">
+                  <div class="progress-bar-fill success" style="width:{{ s[7] }}%;"></div>
                 </div>
-                <span style="font-weight:600;min-width:38px;">{{ s[7] }}%</span>
+                <span class="font-semibold num-cell">{{ s[7] }}%</span>
               </div>
             </td>
           </tr>

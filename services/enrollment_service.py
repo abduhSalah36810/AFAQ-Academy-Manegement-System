@@ -94,6 +94,12 @@ class EnrollmentService:
         )
         return cursor.fetchall()
 
+    def count(self) -> int:
+        """Return total count of enrollments."""
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM enrollments")
+        return cursor.fetchone()[0]
+
     def get_trainee_courses(self, trainee_id):
         cursor = self.connection.cursor()
 

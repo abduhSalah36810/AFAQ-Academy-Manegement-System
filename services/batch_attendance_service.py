@@ -13,7 +13,7 @@ class BatchAttendanceService:
         self.connection = connection
 
     def record(self, batch_id, trainee_id, date, status,
-               session_id=None, notes=None, recorded_by=None):
+               session_id=None, notes=None, recorded_by=None, commit=True):
         """Insert or update attendance (UPSERT by batch+trainee+date)."""
         if status not in self.VALID_STATUSES:
             raise ValueError(f"Status must be one of: {self.VALID_STATUSES}")
@@ -43,31 +43,70 @@ class BatchAttendanceService:
             """,
             (batch_id, session_id, trainee_id, date, status, notes, recorded_by)
         )
-        self.connection.commit()
+        if commit:
+            self.connection.commit()
 
     def record_bulk(self, batch_id, date, records: list[dict],
                     session_id=None, recorded_by=None):
         """
-        Bulk record attendance for a session.
+        Bulk record attendance for a session using batch operations and a single transaction.
         records = [{"trainee_id": int, "status": str, "notes": str|None}, ...]
         Returns (saved: int, errors: list[str])
         """
+        if not records:
+            return 0, []
+
+        cursor = self.connection.cursor()
+
+        # 1. Fetch all actively enrolled trainees for this batch in a single query
+        cursor.execute(
+            "SELECT trainee_id FROM batch_enrollments WHERE batch_id = ? AND status = 'active'",
+            (batch_id,)
+        )
+        active_trainee_ids = {row[0] for row in cursor.fetchall()}
+
         saved = 0
         errors = []
+        valid_rows = []
+
         for rec in records:
+            tid = rec.get("trainee_id")
+            status = rec.get("status", "absent")
+            notes = rec.get("notes")
+
+            if status not in self.VALID_STATUSES:
+                errors.append(f"Trainee {tid}: Status must be one of: {self.VALID_STATUSES}")
+                continue
+
+            if tid not in active_trainee_ids:
+                errors.append(f"Trainee {tid}: Trainee is not actively enrolled in this batch.")
+                continue
+
+            valid_rows.append((batch_id, session_id, tid, date, status, notes, recorded_by))
+
+        if valid_rows:
             try:
-                self.record(
-                    batch_id=batch_id,
-                    trainee_id=rec["trainee_id"],
-                    date=date,
-                    status=rec.get("status", "absent"),
-                    session_id=session_id,
-                    notes=rec.get("notes"),
-                    recorded_by=recorded_by
+                cursor.executemany(
+                    """
+                    INSERT INTO batch_attendance
+                        (batch_id, session_id, trainee_id, date, status, notes, recorded_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (batch_id, trainee_id, date)
+                    DO UPDATE SET
+                        status = excluded.status,
+                        notes = excluded.notes,
+                        recorded_by = excluded.recorded_by,
+                        session_id = COALESCE(excluded.session_id, session_id),
+                        recorded_at = datetime('now')
+                    """,
+                    valid_rows
                 )
-                saved += 1
-            except ValueError as e:
-                errors.append(f"Trainee {rec.get('trainee_id')}: {e}")
+                self.connection.commit()
+                saved = len(valid_rows)
+            except Exception as e:
+                self.connection.rollback()
+                errors.append(f"Database error during batch attendance save: {e}")
+
         return saved, errors
 
     # ── Queries ───────────────────────────────────────────────────────────────

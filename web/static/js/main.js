@@ -168,25 +168,107 @@ document.querySelectorAll('[data-search-table]').forEach(function (input) {
 });
 
 // ---------------------------------------------------------
-// FORM LOADING STATE
+// FORM & BUTTON LOADING STATE + DOUBLE-SUBMISSION PREVENTION
 // ---------------------------------------------------------
-document.querySelectorAll('form[data-loading]').forEach(function (form) {
-  form.addEventListener('submit', function () {
-    const btn = form.querySelector('[type="submit"]');
-    if (!btn) return;
-    btn.disabled = true;
-    const original = btn.innerHTML;
-    btn.dataset.originalText = original;
-    btn.innerHTML = '<span class="spinner"></span> ' + (btn.dataset.loadingText || 'Saving...');
+(function () {
+  function getLoadingText(el) {
+    if (el.dataset.loadingText) {
+      return el.dataset.loadingText;
+    }
+    var text = (el.textContent || '').trim();
+    if (text.indexOf('حفظ') !== -1 || text.indexOf('Save') !== -1) return text.indexOf('Save') !== -1 ? 'Saving...' : 'جاري الحفظ...';
+    if (text.indexOf('تحديث') !== -1 || text.indexOf('Update') !== -1 || text.indexOf('Refresh') !== -1) return text.indexOf('تحديث') !== -1 ? 'جاري التحديث...' : 'Updating...';
+    if (text.indexOf('تصدير') !== -1 || text.indexOf('Export') !== -1) return text.indexOf('تصدير') !== -1 ? 'جاري التجهيز...' : 'Exporting...';
+    if (text.indexOf('تسجيل') !== -1 || text.indexOf('Enroll') !== -1) return text.indexOf('تسجيل') !== -1 ? 'جاري التسجيل...' : 'Enrolling...';
+    if (text.indexOf('إضافة') !== -1 || text.indexOf('Add') !== -1 || text.indexOf('Create') !== -1) return text.indexOf('إضافة') !== -1 ? 'جاري الإضافة...' : 'Adding...';
+    if (text.indexOf('حذف') !== -1 || text.indexOf('Delete') !== -1 || text.indexOf('Remove') !== -1) return text.indexOf('حذف') !== -1 ? 'جاري الحذف...' : 'Deleting...';
+    
+    // Arabic fallback vs English fallback
+    return /[\u0600-\u06FF]/.test(text) ? 'جاري المعالجة...' : 'Processing...';
+  }
+
+  function handleFormSubmit(e) {
+    var form = e.target;
+    if (!form || form.dataset.noLoading !== undefined) return;
+
+    // Prevent duplicate submission
+    if (form.dataset.submitting === 'true') {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    form.dataset.submitting = 'true';
+
+    // Find submit button
+    var submitBtn = (e.submitter && (e.submitter.matches('button, input[type="submit"]')))
+      ? e.submitter
+      : form.querySelector('button[type="submit"], input[type="submit"]');
+
+    if (submitBtn) {
+      if (!submitBtn.dataset.originalHtml) {
+        submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+      }
+      
+      var loadingText = getLoadingText(submitBtn);
+      var isLightBtn = submitBtn.classList.contains('btn-secondary') ||
+                       submitBtn.classList.contains('btn-ghost') ||
+                       submitBtn.classList.contains('btn-outline');
+      var spinnerClass = isLightBtn ? 'spinner spinner-dark' : 'spinner';
+
+      submitBtn.innerHTML = '<span class="' + spinnerClass + '" style="width:13px;height:13px;border-width:2px;margin-inline-end:6px;vertical-align:middle;display:inline-block;"></span>' +
+                            '<span style="vertical-align:middle;">' + loadingText + '</span>';
+
+      // Disable button after event propagation to preserve submit value
+      setTimeout(function () {
+        submitBtn.disabled = true;
+      }, 0);
+    }
+  }
+
+  document.addEventListener('submit', handleFormSubmit, false);
+
+  // Handle standalone action buttons/links that trigger refresh or loading
+  document.addEventListener('click', function (e) {
+    var trigger = e.target.closest('.btn-refresh, [data-action-loading]');
+    if (!trigger || trigger.dataset.submitting === 'true') return;
+    
+    trigger.dataset.submitting = 'true';
+    if (!trigger.dataset.originalHtml) {
+      trigger.dataset.originalHtml = trigger.innerHTML;
+    }
+    var loadingText = getLoadingText(trigger);
+    trigger.innerHTML = '<span class="spinner spinner-dark" style="width:13px;height:13px;border-width:2px;margin-inline-end:6px;vertical-align:middle;display:inline-block;"></span>' +
+                        '<span style="vertical-align:middle;">' + loadingText + '</span>';
+    trigger.style.pointerEvents = 'none';
   });
-});
+
+  // Restore state if restored from browser back/forward cache (bfcache)
+  window.addEventListener('pageshow', function () {
+    document.querySelectorAll('form[data-submitting="true"]').forEach(function (form) {
+      delete form.dataset.submitting;
+      var btn = form.querySelector('button[type="submit"], input[type="submit"]');
+      if (btn && btn.dataset.originalHtml) {
+        btn.innerHTML = btn.dataset.originalHtml;
+        btn.disabled = false;
+      }
+    });
+    document.querySelectorAll('.btn-refresh[data-submitting="true"], [data-action-loading][data-submitting="true"]').forEach(function (btn) {
+      delete btn.dataset.submitting;
+      if (btn.dataset.originalHtml) {
+        btn.innerHTML = btn.dataset.originalHtml;
+        btn.style.pointerEvents = '';
+      }
+    });
+  });
+})();
 
 // ---------------------------------------------------------
 // CONFIRM DIALOG (inline confirm buttons)
 // ---------------------------------------------------------
 document.querySelectorAll('[data-confirm]').forEach(function (btn) {
   btn.addEventListener('click', function (e) {
-    const msg = btn.dataset.confirm || 'Are you sure?';
+    const msg = btn.dataset.confirm || 'هل أنت متأكد من تنفيذ هذا الإجراء؟';
     if (!confirm(msg)) {
       e.preventDefault();
       e.stopPropagation();

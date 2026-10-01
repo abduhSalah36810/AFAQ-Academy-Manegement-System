@@ -1,16 +1,19 @@
 {% extends "layout.html" %}
-{% block title %}Website & Public Content — AFAQ Academy{% endblock %}
+{% block title %}إعدادات الموقع والمحتوى العام — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
+  <!-- PAGE HEADER -->
   <div class="page-header page-header-row">
     <div>
-      <h1 class="page-title">Website & Public Content</h1>
-      <p class="page-subtitle">Manage organization branding, public hero texts, campus gallery, testimonials, and contact inquiries</p>
+      <h1 class="page-title">إعدادات الموقع والمحتوى العام</h1>
+      <p class="page-subtitle">إدارة هوية الأكاديمية، نصوص الواجهة، معرض الصور، آراء الخريجين، ورسائل التواصل</p>
     </div>
     <a href="/" target="_blank" class="btn btn-secondary">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-      Preview Website
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+      </svg>
+      معاينة الموقع
     </a>
   </div>
 
@@ -23,94 +26,106 @@
   <!-- TABS -->
   {% set current_tab = active_tab or 'org' %}
   <div style="display:flex; gap:8px; border-bottom:1px solid var(--color-border); margin-bottom:24px; overflow-x:auto;">
-    <button type="button" class="tab-btn {{ 'active' if current_tab == 'org' else '' }}" onclick="switchTab(event, 'tab-org')">Organization & Hero</button>
-    <button type="button" class="tab-btn {{ 'active' if current_tab == 'gallery' else '' }}" onclick="switchTab(event, 'tab-gallery')">Gallery ({{ gallery_items|length }})</button>
-    <button type="button" class="tab-btn {{ 'active' if current_tab == 'testimonials' else '' }}" onclick="switchTab(event, 'tab-testimonials')">Testimonials ({{ testimonials|length }})</button>
-    <button type="button" class="tab-btn {{ 'active' if current_tab == 'messages' else '' }}" onclick="switchTab(event, 'tab-messages')">Contact Inquiries ({{ contact_messages|length }})</button>
+    <button type="button" class="tab-btn {{ 'active' if current_tab == 'org' else '' }}" onclick="switchTab(event, 'tab-org')">الهوية والواجهة الرئيسية</button>
+    <button type="button" class="tab-btn {{ 'active' if current_tab == 'gallery' else '' }}" onclick="switchTab(event, 'tab-gallery')">معرض الصور ({{ gallery_items|length }})</button>
+    <button type="button" class="tab-btn {{ 'active' if current_tab == 'testimonials' else '' }}" onclick="switchTab(event, 'tab-testimonials')">آراء الخريجين ({{ testimonials|length }})</button>
+    <button type="button" class="tab-btn {{ 'active' if current_tab == 'messages' else '' }}" onclick="switchTab(event, 'tab-messages')">رسائل التواصل ({{ contact_messages|length }})</button>
   </div>
 
   <!-- TAB 1: ORGANIZATION & HERO -->
   <div id="tab-org" class="tab-content" style="{{ 'display:block;' if current_tab == 'org' else 'display:none;' }}">
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">Organization Branding & Content</h2>
+        <h2 class="card-title">هوية الأكاديمية والنصوص الرئيسية</h2>
       </div>
-      <form method="post" action="/admin/website/settings">
+      <form method="post" action="/admin/website/settings" data-loading>
         <div class="card-body">
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="org_name">Academy Brand Name</label>
+              <label class="form-label" for="org_name">اسم الأكاديمية <span class="text-error">*</span></label>
               <input id="org_name" name="org_name" type="text" class="form-input" value="{{ org_settings.org_name }}" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="tagline">Tagline</label>
+              <label class="form-label" for="tagline">الشعار اللفظي (Tagline)</label>
               <input id="tagline" name="tagline" type="text" class="form-input" value="{{ org_settings.tagline }}" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="hero_headline">Homepage Main Headline</label>
+            <label class="form-label" for="hero_headline">العنوان الرئيسي للواجهة <span class="text-error">*</span></label>
             <input id="hero_headline" name="hero_headline" type="text" class="form-input" value="{{ org_settings.hero_headline }}" required />
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="hero_subheadline">Homepage Supporting Description</label>
-            <textarea id="hero_subheadline" name="hero_subheadline" class="form-input" rows="2">{{ org_settings.hero_subheadline }}</textarea>
+            <label class="form-label" for="hero_subheadline">الوصف التعريفي للواجهة الرئيسية</label>
+            <textarea id="hero_subheadline" name="hero_subheadline" class="form-textarea" rows="2">{{ org_settings.hero_subheadline }}</textarea>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="about_text">About AFAQ Section</label>
-            <textarea id="about_text" name="about_text" class="form-input" rows="3">{{ org_settings.about_text }}</textarea>
+            <label class="form-label" for="about_text">عن الأكاديمية ورسالتها</label>
+            <textarea id="about_text" name="about_text" class="form-textarea" rows="3">{{ org_settings.about_text }}</textarea>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="approach_text">Educational Approach Description</label>
-            <textarea id="approach_text" name="approach_text" class="form-input" rows="2">{{ org_settings.approach_text }}</textarea>
+            <label class="form-label" for="approach_text">منهجنا التعليمي</label>
+            <textarea id="approach_text" name="approach_text" class="form-textarea" rows="2">{{ org_settings.approach_text }}</textarea>
           </div>
 
-          <div style="font-weight:700; font-size:1.05rem; margin:24px 0 12px; color:var(--color-text);">Contact Information</div>
+          <div style="font-weight:700; font-size:15px; margin:24px 0 12px; color:var(--color-text);">بيانات التواصل والفرع</div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="email">Public Email</label>
-              <input id="email" name="email" type="email" class="form-input" value="{{ org_settings.email }}" />
+              <label class="form-label" for="email">البريد الإلكتروني العام</label>
+              <input id="email" name="email" type="email" class="form-input input-ltr" value="{{ org_settings.email }}" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="phone">Public Phone</label>
-              <input id="phone" name="phone" type="text" class="form-input" value="{{ org_settings.phone }}" />
+              <label class="form-label" for="phone">الهاتف الرسمي</label>
+              <input id="phone" name="phone" type="text" class="form-input input-ltr" value="{{ org_settings.phone }}" />
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="whatsapp">WhatsApp Number</label>
-              <input id="whatsapp" name="whatsapp" type="text" class="form-input" value="{{ org_settings.whatsapp }}" />
+              <label class="form-label" for="whatsapp">رقم الواتساب الرسمي</label>
+              <input id="whatsapp" name="whatsapp" type="text" class="form-input input-ltr" value="{{ org_settings.whatsapp }}" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="working_hours">Admissions Office Hours</label>
+              <label class="form-label" for="working_hours">ساعات عمل مكتب القبول والتسجيل</label>
               <input id="working_hours" name="working_hours" type="text" class="form-input" value="{{ org_settings.working_hours }}" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="address">Campus Address / Location</label>
+            <label class="form-label" for="address">عنوان المقر / الفرع</label>
             <input id="address" name="address" type="text" class="form-input" value="{{ org_settings.address }}" />
           </div>
 
-          <div style="font-weight:700; font-size:1.05rem; margin:24px 0 12px; color:var(--color-text);">Social Media Channels</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div style="font-weight:700; font-size:15px; margin:24px 0 12px; color:var(--color-text);">قنوات التواصل الاجتماعي (روابط كاملة)</div>
+
+          <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="facebook_url">Facebook URL</label>
-              <input id="facebook_url" name="facebook_url" type="url" class="form-input" value="{{ org_settings.facebook_url }}" />
+              <label class="form-label" for="facebook_url">Facebook</label>
+              <input id="facebook_url" name="facebook_url" type="url" class="form-input input-ltr" placeholder="https://facebook.com/..." value="{{ org_settings.facebook_url or '' }}" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="linkedin_url">LinkedIn URL</label>
-              <input id="linkedin_url" name="linkedin_url" type="url" class="form-input" value="{{ org_settings.linkedin_url }}" />
+              <label class="form-label" for="linkedin_url">LinkedIn</label>
+              <input id="linkedin_url" name="linkedin_url" type="url" class="form-input input-ltr" placeholder="https://linkedin.com/company/..." value="{{ org_settings.linkedin_url or '' }}" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="youtube_url">YouTube</label>
+              <input id="youtube_url" name="youtube_url" type="url" class="form-input input-ltr" placeholder="https://youtube.com/..." value="{{ org_settings.youtube_url or '' }}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="twitter_url">X (Twitter)</label>
+              <input id="twitter_url" name="twitter_url" type="url" class="form-input input-ltr" placeholder="https://x.com/..." value="{{ org_settings.twitter_url or '' }}" />
             </div>
           </div>
         </div>
-        <div class="modal-footer" style="padding:16px 24px; border-top:1px solid var(--color-border);">
-          <button type="submit" class="btn btn-primary">Save Organization Settings</button>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary" data-loading-text="جاري الحفظ...">حفظ الإعدادات</button>
         </div>
       </form>
     </div>
@@ -118,74 +133,68 @@
 
   <!-- TAB 2: GALLERY -->
   <div id="tab-gallery" class="tab-content" style="{{ 'display:block;' if current_tab == 'gallery' else 'display:none;' }}">
-    <div style="display:grid; grid-template-columns:1fr 2fr; gap:24px; align-items:flex-start;">
-      <!-- Add Gallery Item Form -->
+    <div class="form-row" style="align-items:start;">
+      <!-- Add Gallery Item -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Add Photo to Gallery</h2>
+          <h2 class="card-title">إضافة صورة إلى المعرض</h2>
         </div>
-        <form method="post" action="/admin/website/gallery/add">
+        <form method="post" action="/admin/website/gallery/add" data-loading>
           <div class="card-body">
             <div class="form-group">
-              <label class="form-label" for="gal_title">Photo Title *</label>
-              <input id="gal_title" name="title" type="text" class="form-input" placeholder="e.g. Batch 1 Graduation" required />
+              <label class="form-label" for="gal_title">عنوان الصورة <span class="text-error">*</span></label>
+              <input id="gal_title" name="title" type="text" class="form-input" placeholder="مثال: المعمل التقني المتقدم" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="gal_image">Image URL *</label>
-              <input id="gal_image" name="image_url" type="url" class="form-input" placeholder="https://..." required />
+              <label class="form-label" for="gal_url">رابط الصورة (URL) <span class="text-error">*</span></label>
+              <input id="gal_url" name="image_url" type="text" class="form-input input-ltr" placeholder="https://... أو /static/images/..." required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="gal_cat">Category</label>
-              <select id="gal_cat" name="category" class="form-select">
-                <option value="Graduation">Graduation</option>
-                <option value="Courses">Courses</option>
-                <option value="Events">Events</option>
-                <option value="Workshops">Workshops</option>
-                <option value="Activities">Activities</option>
-              </select>
+              <label class="form-label" for="gal_caption">وصف توضيحي أو مناسبة</label>
+              <input id="gal_caption" name="caption" type="text" class="form-input" placeholder="مثال: ورشة تدريب وتطبيق عملي" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="gal_caption">Caption (Optional)</label>
-              <input id="gal_caption" name="caption" type="text" class="form-input" placeholder="Short description..." />
+              <label class="form-label" for="gal_order">ترتيب الظهور</label>
+              <input id="gal_order" name="order_index" type="number" class="form-input num-cell" value="0" />
             </div>
           </div>
-          <div class="modal-footer" style="padding:14px 20px; border-top:1px solid var(--color-border);">
-            <button type="submit" class="btn btn-primary btn-full">Add to Gallery</button>
+          <div class="card-footer">
+            <button type="submit" class="btn btn-primary btn-full" data-loading-text="جاري الإضافة...">إضافة إلى المعرض</button>
           </div>
         </form>
       </div>
 
-      <!-- Gallery Items List -->
+      <!-- Gallery List -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Gallery Photos ({{ gallery_items|length }})</h2>
+          <h2 class="card-title">الصور الحالية بالمعرض ({{ gallery_items|length }})</h2>
         </div>
-        <div class="card-body" style="padding:0;">
+        <div>
           {% if gallery_items %}
-          <div class="table-responsive">
+          <div class="table-wrapper" style="border:none; border-radius:0; box-shadow:none; margin-bottom:0;">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Preview</th>
-                  <th>Title & Caption</th>
-                  <th>Category</th>
-                  <th style="text-align:right;">Actions</th>
+                  <th style="width:70px;">المعاينة</th>
+                  <th>العنوان والوصف</th>
+                  <th>الترتيب</th>
+                  <th class="col-actions">الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {% for item in gallery_items %}
                 <tr>
-                  <td style="width:70px;">
-                    <img src="{{ item.image_url }}" alt="{{ item.title }}" style="width:56px; height:42px; object-fit:cover; border-radius:6px;">
+                  <td>
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}" style="width:54px; height:40px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--color-border);" />
                   </td>
                   <td>
-                    <div style="font-weight:600;">{{ item.title }}</div>
-                    {% if item.caption %}<div class="muted text-sm">{{ item.caption }}</div>{% endif %}
+                    <div class="font-semibold">{{ item.title }}</div>
+                    {% if item.caption %}<div class="muted text-xs">{{ item.caption }}</div>{% endif %}
                   </td>
-                  <td><span class="badge badge-neutral">{{ item.category }}</span></td>
-                  <td style="text-align:right;">
-                    <form method="post" action="/admin/website/gallery/{{ item.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this gallery item?');">
-                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Delete</button>
+                  <td class="num-cell">{{ item.order_index }}</td>
+                  <td class="col-actions">
+                    <form method="post" action="/admin/website/gallery/{{ item.id }}/delete" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذه الصورة؟');" data-loading>
+                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">حذف</button>
                     </form>
                   </td>
                 </tr>
@@ -194,9 +203,11 @@
             </table>
           </div>
           {% else %}
-          <div class="empty-state" style="padding:40px;">
-            <div class="empty-title">Gallery is empty</div>
-            <div class="empty-description">Add photos using the form on the left.</div>
+          <div class="card-body">
+            <div class="empty-state" style="padding:32px;">
+              <div class="empty-title">لا توجد صور في المعرض بعد</div>
+              <div class="empty-description">أضف صورًا للأنشطة والمعامل باستخدام النموذج.</div>
+            </div>
           </div>
           {% endif %}
         </div>
@@ -206,37 +217,37 @@
 
   <!-- TAB 3: TESTIMONIALS -->
   <div id="tab-testimonials" class="tab-content" style="{{ 'display:block;' if current_tab == 'testimonials' else 'display:none;' }}">
-    <div style="display:grid; grid-template-columns:1fr 2fr; gap:24px; align-items:flex-start;">
+    <div class="form-row" style="align-items:start;">
       <!-- Add Testimonial -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Add Student Testimonial</h2>
+          <h2 class="card-title">إضافة رأي خريج / متدرب</h2>
         </div>
-        <form method="post" action="/admin/website/testimonials/add">
+        <form method="post" action="/admin/website/testimonials/add" data-loading>
           <div class="card-body">
             <div class="form-group">
-              <label class="form-label" for="test_name">Student Name *</label>
-              <input id="test_name" name="student_name" type="text" class="form-input" required />
+              <label class="form-label" for="test_name">اسم المتدرب <span class="text-error">*</span></label>
+              <input id="test_name" name="student_name" type="text" class="form-input" placeholder="مثال: سارة أحمد" required />
             </div>
             <div class="form-group">
-              <label class="form-label" for="test_role">Course / Role (Optional)</label>
-              <input id="test_role" name="role_or_course" type="text" class="form-input" placeholder="e.g. Next.js Graduate" />
+              <label class="form-label" for="test_role">الدورة / التخصص الحالي</label>
+              <input id="test_role" name="role_or_course" type="text" class="form-input" placeholder="مثال: خريجة دورة بايثون - مطورة برمجيات" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="test_rating">Rating (1 to 5)</label>
+              <label class="form-label" for="test_rating">التقييم (1 إلى 5)</label>
               <select id="test_rating" name="rating" class="form-select">
-                <option value="5" selected>5 Stars (★★★★★)</option>
-                <option value="4">4 Stars (★★★★☆)</option>
-                <option value="3">3 Stars (★★★☆☆)</option>
+                <option value="5" selected>5 نجوم (★★★★★)</option>
+                <option value="4">4 نجوم (★★★★☆)</option>
+                <option value="3">3 نجوم (★★★☆☆)</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label" for="test_content">Testimonial Quote *</label>
-              <textarea id="test_content" name="content" class="form-input" rows="3" required></textarea>
+              <label class="form-label" for="test_content">نص الرأي / التجربة <span class="text-error">*</span></label>
+              <textarea id="test_content" name="content" class="form-textarea" rows="3" placeholder="اكتب تقييم وتجربة المتدرب..." required></textarea>
             </div>
           </div>
-          <div class="modal-footer" style="padding:14px 20px; border-top:1px solid var(--color-border);">
-            <button type="submit" class="btn btn-primary btn-full">Publish Testimonial</button>
+          <div class="card-footer">
+            <button type="submit" class="btn btn-primary btn-full" data-loading-text="جاري النشر...">نشر التقييم</button>
           </div>
         </form>
       </div>
@@ -244,36 +255,36 @@
       <!-- Testimonials List -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Published Testimonials ({{ testimonials|length }})</h2>
+          <h2 class="card-title">الآراء المنشورة ({{ testimonials|length }})</h2>
         </div>
-        <div class="card-body" style="padding:0;">
+        <div>
           {% if testimonials %}
-          <div class="table-responsive">
+          <div class="table-wrapper" style="border:none; border-radius:0; box-shadow:none; margin-bottom:0;">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Student</th>
-                  <th>Testimonial</th>
-                  <th>Rating</th>
-                  <th style="text-align:right;">Actions</th>
+                  <th>المتدرب</th>
+                  <th>نص التقييم</th>
+                  <th>التقييم</th>
+                  <th class="col-actions">الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {% for t in testimonials %}
                 <tr>
                   <td>
-                    <div style="font-weight:600;">{{ t.student_name }}</div>
-                    <div class="muted text-sm">{{ t.role_or_course }}</div>
+                    <div class="font-semibold">{{ t.student_name }}</div>
+                    <div class="muted text-xs">{{ t.role_or_course }}</div>
                   </td>
-                  <td style="max-width:280px;">
+                  <td style="max-width:260px;">
                     <div class="text-sm muted" style="white-space:normal;">"{{ t.content }}"</div>
                   </td>
                   <td>
-                    <span style="color:#f59e0b;">{{ t.rating }} ★</span>
+                    <span style="color:#d97706; font-weight:700;" class="num-cell">{{ t.rating }} ★</span>
                   </td>
-                  <td style="text-align:right;">
-                    <form method="post" action="/admin/website/testimonials/{{ t.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this testimonial?');">
-                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Delete</button>
+                  <td class="col-actions">
+                    <form method="post" action="/admin/website/testimonials/{{ t.id }}/delete" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا التقييم؟');" data-loading>
+                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">حذف</button>
                     </form>
                   </td>
                 </tr>
@@ -282,9 +293,11 @@
             </table>
           </div>
           {% else %}
-          <div class="empty-state" style="padding:40px;">
-            <div class="empty-title">No testimonials yet</div>
-            <div class="empty-description">Add testimonials using the form on the left.</div>
+          <div class="card-body">
+            <div class="empty-state" style="padding:32px;">
+              <div class="empty-title">لا توجد آراء منشورة بعد</div>
+              <div class="empty-description">أضف آراء الخريجين باستخدام النموذج المقابل.</div>
+            </div>
           </div>
           {% endif %}
         </div>
@@ -296,49 +309,49 @@
   <div id="tab-messages" class="tab-content" style="{{ 'display:block;' if current_tab == 'messages' else 'display:none;' }}">
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">Contact Form Messages ({{ contact_messages|length }})</h2>
+        <h2 class="card-title">رسائل واستفسارات التواصل ({{ contact_messages|length }})</h2>
       </div>
-      <div class="card-body" style="padding:0;">
+      <div>
         {% if contact_messages %}
-        <div class="table-responsive">
+        <div class="table-wrapper" style="border:none; border-radius:0; box-shadow:none; margin-bottom:0;">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Sender</th>
-                <th>Subject & Message</th>
-                <th>Received</th>
-                <th>Status</th>
-                <th style="text-align:right;">Actions</th>
+                <th>المرسل</th>
+                <th>الموضوع والرسالة</th>
+                <th>تاريخ الإرسال</th>
+                <th>الحالة</th>
+                <th class="col-actions">الإجراءات</th>
               </tr>
             </thead>
             <tbody>
               {% for msg in contact_messages %}
               <tr>
                 <td>
-                  <div style="font-weight:600;">{{ msg.name }}</div>
-                  <div class="muted text-sm">{{ msg.email }}</div>
-                  {% if msg.phone != "—" %}<div class="muted text-sm">{{ msg.phone }}</div>{% endif %}
+                  <div class="font-semibold">{{ msg.name }}</div>
+                  <div class="muted text-xs ltr-cell">{{ msg.email }}</div>
+                  {% if msg.phone != "—" %}<div class="muted text-xs ltr-cell">{{ msg.phone }}</div>{% endif %}
                 </td>
                 <td style="max-width:320px;">
-                  <div style="font-weight:600;">{{ msg.subject }}</div>
+                  <div class="font-semibold">{{ msg.subject }}</div>
                   <div class="text-sm muted" style="white-space:pre-wrap; max-height:80px; overflow-y:auto; margin-top:4px;">{{ msg.message }}</div>
                 </td>
-                <td class="text-sm muted">{{ msg.created_at[:16] }}</td>
+                <td class="text-sm muted date-cell">{{ msg.created_at[:16] }}</td>
                 <td>
                   <span class="badge {{ 'badge-success' if msg.status == 'handled' else ('badge-warning' if msg.status == 'unread' else 'badge-neutral') }}">
-                    {{ msg.status|capitalize }}
+                    {{ 'تمت المعالجة' if msg.status == 'handled' else ('غير مقروءة' if msg.status == 'unread' else msg.status) }}
                   </span>
                 </td>
-                <td style="text-align:right;">
-                  <div style="display:inline-flex; gap:6px;">
+                <td class="col-actions">
+                  <div class="flex gap-1" style="justify-content:flex-end;">
                     {% if msg.status != 'handled' %}
-                    <form method="post" action="/admin/website/messages/{{ msg.id }}/status" style="display:inline;">
+                    <form method="post" action="/admin/website/messages/{{ msg.id }}/status" style="display:inline;" data-loading>
                       <input type="hidden" name="status" value="handled" />
-                      <button type="submit" class="btn btn-secondary btn-sm">Mark Handled</button>
+                      <button type="submit" class="btn btn-secondary btn-sm">تم الرد</button>
                     </form>
                     {% endif %}
-                    <form method="post" action="/admin/website/messages/{{ msg.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete message?');">
-                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Delete</button>
+                    <form method="post" action="/admin/website/messages/{{ msg.id }}/delete" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذه الرسالة؟');" data-loading>
+                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">حذف</button>
                     </form>
                   </div>
                 </td>
@@ -348,9 +361,11 @@
           </table>
         </div>
         {% else %}
-        <div class="empty-state" style="padding:48px;">
-          <div class="empty-title">Inbox is empty</div>
-          <div class="empty-description">Contact messages submitted on the homepage will appear here.</div>
+        <div class="card-body">
+          <div class="empty-state" style="padding:40px;">
+            <div class="empty-title">صندوق الرسائل فارغ</div>
+            <div class="empty-description">الرسائل والاستفسارات المرسلة عبر نموذج التواصل ستظهر هنا.</div>
+          </div>
         </div>
         {% endif %}
       </div>
@@ -365,10 +380,12 @@
   border: none;
   border-bottom: 2px solid transparent;
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 13.5px;
   color: var(--color-text-muted);
   cursor: pointer;
   white-space: nowrap;
+  font-family: inherit;
+  transition: all var(--transition);
 }
 .tab-btn.active {
   color: var(--color-primary);

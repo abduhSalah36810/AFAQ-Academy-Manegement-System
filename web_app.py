@@ -104,9 +104,12 @@ templates = Jinja2Templates(directory=ROOT / "web" / "templates")
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
-def get_db():
-    """Return a fresh DB connection (closed by caller)."""
-    return get_connection()
+def get_db(request: Request = None):
+    """Return a DB connection (request-scoped within async context, closed by caller)."""
+    if request and hasattr(request, "state") and hasattr(request.state, "db"):
+        if request.state.db is not None:
+            return request.state.db
+    return get_connection(request_scoped=True)
 
 
 def get_session_user(request: Request):
@@ -365,19 +368,15 @@ async def admin_dashboard(request: Request):
         course_svc = CourseService(conn)
         enroll_svc = EnrollmentService(conn)
 
-        trainees    = admin_svc.get_trainees()
-        instructors = admin_svc.get_instructors()
-        courses     = course_svc.get_all()
-
-        # Count total enrollments
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM enrollments")
-        enrollment_count = cursor.fetchone()[0]
+        user_counts      = admin_svc.get_user_counts_by_role()
+        courses_count    = course_svc.count()
+        enrollment_count = enroll_svc.count()
+        recent_courses   = course_svc.get_recent(limit=6)
 
         stats = {
-            "trainees":    len(trainees),
-            "instructors": len(instructors),
-            "courses":     len(courses),
+            "trainees":    user_counts.get("trainee", 0),
+            "instructors": user_counts.get("instructor", 0),
+            "courses":     courses_count,
             "enrollments": enrollment_count,
         }
 
@@ -385,7 +384,7 @@ async def admin_dashboard(request: Request):
                       page_title="Dashboard",
                       active_page="dashboard",
                       stats=stats,
-                      recent_courses=courses[:6])
+                      recent_courses=recent_courses)
     finally:
         conn.close()
 

@@ -1,33 +1,38 @@
 {% extends "layout.html" %}
-{% block title %}Attendance — AFAQ Academy{% endblock %}
+{% block title %}سجلات الحضور — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
+  <!-- PAGE HEADER -->
   <div class="page-header">
-    <h1 class="page-title">Attendance</h1>
-    <p class="page-subtitle">Record and view attendance across all courses</p>
+    <h1 class="page-title">سجلات الحضور</h1>
+    <p class="page-subtitle">تسجيل ومتابعة حضور وغياب المتدربين عبر الدورات التدريبية</p>
   </div>
 
-  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+  <div class="form-row" style="align-items:start;">
 
     <!-- RECORD ATTENDANCE -->
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Record Attendance</span>
+        <span class="card-title">تسجيل الحضور الفردي</span>
       </div>
       <form method="post" action="/admin/attendance/record" data-loading>
-        <div class="card-body" style="display:flex; flex-direction:column; gap:0;">
+        <div class="card-body">
           {% if form_error %}
           <div class="alert alert-error" style="margin-bottom:16px;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             <span>{{ form_error }}</span>
           </div>
           {% endif %}
 
           <div class="form-group">
-            <label class="form-label" for="att-trainee">Student</label>
+            <label class="form-label" for="att-trainee">المتدرب <span class="text-error">*</span></label>
             <select id="att-trainee" name="trainee_id" class="form-select" required>
-              <option value="">— Select student —</option>
+              <option value="">— اختر المتدرب —</option>
               {% for t in trainees %}
               <option value="{{ t[0] }}">{{ t[1] }}</option>
               {% endfor %}
@@ -35,9 +40,9 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="att-course">Course</label>
+            <label class="form-label" for="att-course">الدورة التدريبية <span class="text-error">*</span></label>
             <select id="att-course" name="course_id" class="form-select" required>
-              <option value="">— Select course —</option>
+              <option value="">— اختر الدورة التدريبية —</option>
               {% for c in courses %}
               <option value="{{ c[0] }}">{{ c[1] }}</option>
               {% endfor %}
@@ -45,22 +50,24 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="att-date">Date</label>
-            <input id="att-date" name="date" type="date" class="form-input" value="{{ today }}" required />
+            <label class="form-label" for="att-date">التاريخ <span class="text-error">*</span></label>
+            <input id="att-date" name="date" type="date" class="form-input date-cell" value="{{ today }}" required />
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="att-status">Status</label>
+            <label class="form-label" for="att-status">الحالة <span class="text-error">*</span></label>
             <select id="att-status" name="status" class="form-select status-select" required>
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
+              <option value="present">حاضر</option>
+              <option value="absent">غائب</option>
             </select>
           </div>
         </div>
         <div class="card-footer">
-          <button type="submit" class="btn btn-primary" data-loading-text="Saving...">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            Save Attendance
+          <button type="submit" class="btn btn-primary" data-loading-text="جاري الحفظ...">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            حفظ الحضور
           </button>
         </div>
       </form>
@@ -69,27 +76,27 @@
     <!-- RECENT ATTENDANCE -->
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Recent Records</span>
+        <span class="card-title">أحدث سجلات الحضور</span>
       </div>
       <div class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Student</th>
-              <th>Course</th>
-              <th>Date</th>
-              <th>Status</th>
+              <th>المتدرب</th>
+              <th>الدورة التدريبية</th>
+              <th>التاريخ</th>
+              <th>الحالة</th>
             </tr>
           </thead>
           <tbody>
             {% for row in recent_attendance %}
             <tr>
-              <td class="font-medium">{{ row[0] }}</td>
+              <td class="font-semibold">{{ row[0] }}</td>
               <td class="muted">{{ row[1] }}</td>
-              <td class="muted text-sm">{{ row[2] }}</td>
+              <td class="muted text-sm date-cell">{{ row[2] }}</td>
               <td>
                 <span class="badge {{ 'badge-success' if row[3] == 'present' else 'badge-error' }}">
-                  {{ row[3] | capitalize }}
+                  {{ 'حاضر' if row[3] == 'present' else 'غائب' }}
                 </span>
               </td>
             </tr>
@@ -97,8 +104,8 @@
             <tr>
               <td colspan="4">
                 <div class="empty-state" style="padding:24px;">
-                  <div class="empty-title">No attendance records</div>
-                  <div class="empty-description">Record the first attendance session.</div>
+                  <div class="empty-title">لا توجد سجلات حضور حتى الآن</div>
+                  <div class="empty-description">سجّل أول جلسة حضور لبدء متابعة سجلات الطلاب.</div>
                 </div>
               </td>
             </tr>

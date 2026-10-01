@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Task Submissions — {{ batch[2] }} — AFAQ Academy{% endblock %}
+{% block title %}تسليمات المهام — {{ batch[2] }} — AFAQ Academy{% endblock %}
 
 {% block content %}
 <div class="page-content">
@@ -7,22 +7,22 @@
     <div>
       <div class="breadcrumb-nav">
         {% if user.role == "admin" %}
-        <a href="/admin/courses">Courses</a>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="/admin/courses">الدورات التدريبية</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
         <a href="/admin/batches/{{ batch[0] }}">{{ batch[2] }}</a>
         {% else %}
-        <a href="/instructor/batches">Batches</a>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="/instructor/batches">الدفعات التدريبية</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
         <span>{{ batch[2] }}</span>
         {% endif %}
       </div>
-      <h1 class="page-title">Task Submissions</h1>
-      <p class="page-subtitle">{{ submissions|length }} submission{{ 's' if submissions|length != 1 else '' }} in this batch</p>
+      <h1 class="page-title">تسليمات المهام</h1>
+      <p class="page-subtitle"><span class="num-cell">{{ submissions|length }}</span> تسليم في هذه الدفعة</p>
     </div>
     <div class="flex gap-2">
       <a href="/admin/courses/{{ batch[1] }}/chapters" class="btn btn-secondary">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-        Manage Course Tasks
+        إدارة مهام الدورة
       </a>
     </div>
   </div>
@@ -37,40 +37,40 @@
   <div class="card">
     <div class="card-body" style="padding:0;">
       {% if submissions %}
-      <div class="table-responsive">
+      <div class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Task</th>
-              <th>Student</th>
-              <th>Submitted</th>
-              <th>Content / Link</th>
-              <th>Status</th>
-              <th>Score</th>
-              <th>Feedback</th>
-              <th style="text-align:right;">Actions</th>
+              <th>المهمة</th>
+              <th>المتدرب</th>
+              <th>تاريخ التسليم</th>
+              <th>المحتوى / الرابط</th>
+              <th>الحالة</th>
+              <th>الدرجة</th>
+              <th>الملاحظات</th>
+              <th class="col-actions">إجراءات</th>
             </tr>
           </thead>
           <tbody>
             {% for s in submissions %}
-            {# s format from SubmissionService: id, task_id, task_title, trainee_id, trainee_name, trainee_email, submitted_at, status, score, feedback, max_score, submission_url, submission_text #}
+            {# s format: id, task_id, task_title, trainee_id, trainee_name, trainee_email, submitted_at, status, score, feedback, max_score, submission_url, submission_text #}
             <tr>
               <td>
                 <div style="font-weight:600;">{{ s[2] }}</div>
-                <div class="muted text-sm">Max: {{ s[10] }} pts</div>
+                <div class="muted text-sm num-cell">الحد الأقصى: {{ s[10] }} نقطة</div>
               </td>
               <td>
                 <div style="font-weight:600;">{{ s[4] }}</div>
-                <div class="muted text-sm">{{ s[5] }}</div>
+                <div class="muted text-sm ltr-cell">{{ s[5] }}</div>
               </td>
-              <td class="text-sm muted">
+              <td class="text-sm muted date-cell">
                 {{ s[6] or '—' }}
               </td>
               <td>
                 {% if s[11] %}
                 <a href="{{ s[11] }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm" style="display:inline-flex; align-items:center; gap:4px; color:var(--color-primary);">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                  View Link
+                  عرض الرابط
                 </a>
                 {% endif %}
                 {% if s[12] %}
@@ -81,11 +81,11 @@
                 {% endif %}
               </td>
               <td>
-                <span class="badge {{ 'badge-success' if s[7] == 'approved' else ('badge-warning' if s[7] in ('submitted', 'under_review') else ('badge-error' if s[7] == 'rejected' else 'badge-info')) }}">
-                  {{ s[7]|replace('_', ' ')|capitalize }}
+                <span class="badge {{ 'badge-success' if s[7] == 'approved' else ('badge-warning' if s[7] in ('submitted', 'under_review', 'needs_revision') else ('badge-error' if s[7] == 'rejected' else 'badge-info')) }}">
+                  {{ 'مقبول' if s[7] == 'approved' else ('قيد المراجعة' if s[7] in ('submitted', 'under_review') else ('يتطلب تعديل' if s[7] == 'needs_revision' else ('مرفوض' if s[7] == 'rejected' else s[7]))) }}
                 </span>
               </td>
-              <td>
+              <td class="num-cell">
                 {% if s[8] is not none %}
                 <span style="font-weight:700; color:var(--color-success);">{{ s[8] }}</span>
                 <span class="muted text-sm">/ {{ s[10] }}</span>
@@ -98,10 +98,10 @@
                   {{ s[9] or '—' }}
                 </span>
               </td>
-              <td style="text-align:right;">
+              <td class="col-actions">
                 <button type="button" class="btn btn-secondary btn-sm"
                   onclick="openReviewModal({{ s[0] }}, '{{ s[2]|e }}', '{{ s[4]|e }}', '{{ s[7] }}', {{ s[8] if s[8] is not none else 'null' }}, '{{ (s[9] or '')|e }}', {{ s[10] }})">
-                  Review
+                  تقييم ومراجعة
                 </button>
               </td>
             </tr>
@@ -114,8 +114,8 @@
         <div class="empty-icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
         </div>
-        <div class="empty-title">No submissions yet</div>
-        <div class="empty-description">Students in this batch have not submitted any task solutions yet.</div>
+        <div class="empty-title">لا توجد تسليمات بعد</div>
+        <div class="empty-description">لم يقم متدربو هذه الدفعة بتسليم أي حلول للمهام حتى الآن.</div>
       </div>
       {% endif %}
     </div>
@@ -126,43 +126,43 @@
 <div id="review-submission-modal" class="modal-overlay">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title" id="review-modal-title">Review Submission</span>
+      <span class="modal-title" id="review-modal-title">مراجعة تسليم المهمة</span>
       <button class="modal-close" data-modal-close="review-submission-modal">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
-    <form id="review-submission-form" method="post" action="">
+    <form id="review-submission-form" method="post" action="" data-loading>
       <div class="modal-body">
         <div style="margin-bottom:14px; background:var(--color-surface); padding:10px 14px; border-radius:8px; border:1px solid var(--color-border);">
-          <div style="font-size:0.8rem; color:var(--color-text-muted);">Student</div>
+          <div style="font-size:0.8rem; color:var(--color-text-muted);">المتدرب</div>
           <div id="review-student-name" style="font-weight:600;"></div>
-          <div style="font-size:0.8rem; color:var(--color-text-muted); margin-top:4px;">Task</div>
+          <div style="font-size:0.8rem; color:var(--color-text-muted); margin-top:4px;">المهمة</div>
           <div id="review-task-title" style="font-weight:600;"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="review-status">Decision / Status</label>
+          <label class="form-label" for="review-status">القرار / الحالة</label>
           <select id="review-status" name="status" class="form-select" required>
-            <option value="approved">Approved</option>
-            <option value="needs_revision">Needs Revision</option>
-            <option value="rejected">Rejected</option>
-            <option value="under_review">Under Review</option>
+            <option value="approved">مقبول (Approved)</option>
+            <option value="needs_revision">يتطلب تعديل (Needs Revision)</option>
+            <option value="rejected">مرفوض (Rejected)</option>
+            <option value="under_review">قيد المراجعة (Under Review)</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="review-score">Score <span id="review-max-label" class="muted text-sm"></span></label>
-          <input id="review-score" name="score" type="number" step="0.1" min="0" class="form-input" placeholder="e.g. 95" />
+          <label class="form-label" for="review-score">الدرجة المستحقة <span id="review-max-label" class="muted text-sm num-cell"></span></label>
+          <input id="review-score" name="score" type="number" step="0.1" min="0" class="form-input num-cell" placeholder="مثال: 95" />
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="review-feedback">Feedback to Student</label>
-          <textarea id="review-feedback" name="feedback" class="form-input" rows="3" placeholder="Add constructive notes or explanations..."></textarea>
+          <label class="form-label" for="review-feedback">الملاحظات والتوجيهات للطالب</label>
+          <textarea id="review-feedback" name="feedback" class="form-input" rows="3" placeholder="أدخل الملاحظات والتوجيهات البناءة للمتدرب..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close="review-submission-modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Review</button>
+        <button type="button" class="btn btn-secondary" data-modal-close="review-submission-modal">إلغاء</button>
+        <button type="submit" class="btn btn-primary" data-loading-text="جاري الحفظ...">حفظ التقييم</button>
       </div>
     </form>
   </div>
@@ -178,7 +178,7 @@ function openReviewModal(subId, taskTitle, studentName, status, score, feedback,
   document.getElementById('review-status').value = status;
   document.getElementById('review-score').value = (score !== null) ? score : '';
   document.getElementById('review-score').max = maxScore;
-  document.getElementById('review-max-label').textContent = '(Max: ' + maxScore + ')';
+  document.getElementById('review-max-label').textContent = '(الحد الأقصى: ' + maxScore + ')';
   document.getElementById('review-feedback').value = feedback || '';
 
   openModal('review-submission-modal');

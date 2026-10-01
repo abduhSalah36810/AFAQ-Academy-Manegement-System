@@ -61,6 +61,35 @@ class CourseService:
     def get_active_courses(self):
         return self.get_all(include_archived=False)
 
+    def count(self, include_archived: bool = True) -> int:
+        """Return total count of courses."""
+        cursor = self.connection.cursor()
+        if not include_archived:
+            cursor.execute("SELECT COUNT(*) FROM courses WHERE active = 1")
+        else:
+            cursor.execute("SELECT COUNT(*) FROM courses")
+        return cursor.fetchone()[0]
+
+    def get_recent(self, limit: int = 6):
+        """Return the most recent courses up to limit, joined with instructor name."""
+        cursor = self.connection.cursor()
+        query = """
+            SELECT
+                courses.id,
+                courses.name,
+                users.name,
+                courses.active,
+                courses.description,
+                courses.instructor_id
+            FROM courses
+            LEFT JOIN users
+                ON courses.instructor_id = users.id
+            ORDER BY courses.id
+            LIMIT ?
+        """
+        cursor.execute(query, (limit,))
+        return cursor.fetchall()
+
     def get_by_id(self, course_id):
         cursor = self.connection.cursor()
         cursor.execute(
