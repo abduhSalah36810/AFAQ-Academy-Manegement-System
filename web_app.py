@@ -81,6 +81,18 @@ async def health_check():
         info["db_error"] = str(e)
     return info
 
+
+@app.get("/api/debug-templates")
+async def debug_templates():
+    import os
+    t_dir = ROOT / "web" / "templates"
+    files = []
+    if t_dir.exists():
+        for r, _, fs in os.walk(t_dir):
+            for f in fs:
+                files.append(os.path.relpath(os.path.join(r, f), t_dir).replace("\\", "/"))
+    return {"exists": t_dir.exists(), "files": sorted(files)}
+
 # Session middleware (signed cookie; keep the secret in env for production)
 SECRET_KEY = os.environ.get("AFAQ_SECRET_KEY", "afaq-academy-secret-key-change-in-production")
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="afaq_session")
