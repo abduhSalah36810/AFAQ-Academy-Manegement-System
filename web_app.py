@@ -18,8 +18,9 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
-from fastapi import FastAPI, Request, Form, Response
-from fastapi.responses import RedirectResponse, HTMLResponse
+import io
+from fastapi import FastAPI, Request, Form, Response, UploadFile, File
+from fastapi.responses import RedirectResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -38,6 +39,18 @@ from services.Attendence_service import AttendanceService
 from services.grade_service import GradeService
 from services.material_service import CourseMaterialService
 from services.audit_service import AuditService
+# New LMS services
+from services.batch_service import BatchService
+from services.chapter_service import ChapterService
+from services.session_service import SessionService
+from services.batch_enrollment_service import BatchEnrollmentService
+from services.enrollment_request_service import EnrollmentRequestService
+from services.batch_attendance_service import BatchAttendanceService
+from services.task_service import TaskService
+from services.submission_service import SubmissionService
+from services.grading_service import GradingService
+from services.bonus_service import BonusService
+from services import excel_service
 
 # ── App setup ───────────────────────────────────────────────────────────────
 create_tables()
@@ -1339,6 +1352,1431 @@ async def change_password(
         else:
             flash(request, msg, "error")
         return RedirectResponse("/profile", status_code=302)
+    finally:
+        conn.close()
+
+
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BATCH MANAGEMENT (Admin)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/admin/courses/{course_id}/batches", response_class=HTMLResponse)
+async def admin_course_batches(request: Request, course_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        course_svc = CourseService(conn)
+        batch_svc = BatchService(conn)
+        admin_svc = AdminService(conn)
+
+        course = course_svc.get_by_id(course_id)
+        if not course:
+            flash(request, "Course not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        batches = batch_svc.get_by_course(course_id)
+        instructors = admin_svc.get_active_instructors()
+        return render(request, "admin/batches.html",
+                      page_title=f"Batches — {course[1]}",
+                      active_page="courses",
+                      course=course,
+                      batches=batches,
+                      instructors=instructors)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/courses/{course_id}/batches/create", response_class=HTMLResponse)
+async def admin_create_batch(
+    request: Request,
+    course_id: int,
+    name: str = Form(...),
+    instructor_id: str = Form(""),
+    capacity: int = Form(0),
+    start_date: str = Form(""),
+    end_date: str = Form(""),
+    registration_cutoff_sessions: int = Form(0),
+    notes: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        ins_id = int(instructor_id) if instructor_id and instructor_id.strip() else None
+        try:
+            batch_svc.create(
+                course_id, name.strip(),
+                instructor_id=ins_id,
+                capacity=capacity,
+                start_date=start_date or None,
+                end_date=end_date or None,
+                registration_cutoff_sessions=registration_cutoff_sessions,
+                notes=notes or None,
+            )
+            flash(request, f"Batch '{name}' created successfully.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/courses/{course_id}/batches", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.get("/admin/batches/{batch_id}", response_class=HTMLResponse)
+async def admin_batch_detail(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        session_svc = SessionService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+        req_svc = EnrollmentRequestService(conn)
+        grading_svc = GradingService(conn)
+        admin_svc = AdminService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            flash(request, "Batch not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        sessions = session_svc.get_by_batch(batch_id)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        enrolled_count = len(trainees)
+        pending_requests_count = len(req_svc.get_pending(batch_id=batch_id))
+        components = grading_svc.get_components(batch_id)
+        total_weight = grading_svc.get_total_weight(batch_id)
+        all_trainees = admin_svc.get_active_trainees()
+
+        return render(request, "admin/batch_detail.html",
+                      page_title=f"Batch — {batch[2]}",
+                      active_page="courses",
+                      batch=batch,
+                      sessions=sessions,
+                      trainees=trainees,
+                      enrolled_count=enrolled_count,
+                      pending_requests_count=pending_requests_count,
+                      components=components,
+                      total_weight=total_weight,
+                      all_trainees=all_trainees)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/batches/{batch_id}/edit", response_class=HTMLResponse)
+async def admin_edit_batch(
+    request: Request,
+    batch_id: int,
+    name: str = Form(...),
+    instructor_id: str = Form(""),
+    capacity: int = Form(0),
+    start_date: str = Form(""),
+    end_date: str = Form(""),
+    registration_cutoff_sessions: int = Form(0),
+    status: str = Form("upcoming"),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        ins_id = int(instructor_id) if instructor_id and instructor_id.strip() else None
+        try:
+            batch_svc.update(
+                batch_id, name.strip(),
+                instructor_id=ins_id,
+                capacity=capacity,
+                start_date=start_date or None,
+                end_date=end_date or None,
+                registration_cutoff_sessions=registration_cutoff_sessions,
+                status=status,
+            )
+            flash(request, "Batch updated successfully.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+
+        # Find course_id to redirect back
+        batch = batch_svc.get_by_id(batch_id)
+        course_id = batch[1] if batch else 0
+        return RedirectResponse(f"/admin/courses/{course_id}/batches", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/batches/{batch_id}/enroll", response_class=HTMLResponse)
+async def admin_batch_enroll(
+    request: Request,
+    batch_id: int,
+    trainee_id: int = Form(...),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        enroll_svc = BatchEnrollmentService(conn)
+        try:
+            enroll_svc.enroll(batch_id, trainee_id, enrolled_by=user["id"])
+            flash(request, "Student enrolled successfully.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/batches/{batch_id}/unenroll", response_class=HTMLResponse)
+async def admin_batch_unenroll(
+    request: Request,
+    batch_id: int,
+    trainee_id: int = Form(...),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        enroll_svc = BatchEnrollmentService(conn)
+        try:
+            enroll_svc.unenroll(batch_id, trainee_id)
+            flash(request, "Student removed from batch.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── SESSIONS ──────────────────────────────────────────────────────────────────
+
+@app.post("/admin/batches/{batch_id}/sessions/create", response_class=HTMLResponse)
+async def admin_create_session(
+    request: Request,
+    batch_id: int,
+    title: str = Form(...),
+    date: str = Form(""),
+    session_number: str = Form(""),
+    notes: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        session_svc = SessionService(conn)
+        num = int(session_number) if session_number.strip() else None
+        try:
+            session_svc.create(batch_id, title.strip(),
+                               session_number=num,
+                               date=date or None,
+                               notes=notes or None)
+            flash(request, f"Session '{title}' created.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/sessions/{session_id}/status", response_class=HTMLResponse)
+async def admin_set_session_status(
+    request: Request,
+    session_id: int,
+    status: str = Form(...),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        session_svc = SessionService(conn)
+        try:
+            sess = session_svc.get_by_id(session_id)
+            session_svc.set_status(session_id, status)
+        except ValueError as e:
+            flash(request, str(e), "error")
+        # redirect back to batch
+        if sess:
+            return RedirectResponse(f"/admin/batches/{sess[1]}", status_code=302)
+        return RedirectResponse("/admin/courses", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── ENROLLMENT REQUESTS ───────────────────────────────────────────────────────
+
+@app.get("/admin/batches/{batch_id}/requests", response_class=HTMLResponse)
+async def admin_enrollment_requests(request: Request, batch_id: int, status: str = None):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        req_svc = EnrollmentRequestService(conn)
+        batch_svc = BatchService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            flash(request, "Batch not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        requests = req_svc.get_all(batch_id=batch_id, status=status)
+        pending_count = len(req_svc.get_pending(batch_id=batch_id))
+
+        return render(request, "admin/enrollment_requests.html",
+                      page_title="Enrollment Requests",
+                      active_page="enrollment",
+                      batch=batch,
+                      requests=requests,
+                      pending_count=pending_count,
+                      current_status=status)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/enrollment-requests/{request_id}/approve", response_class=HTMLResponse)
+async def admin_approve_request(request: Request, request_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        req_svc = EnrollmentRequestService(conn)
+        # Get batch_id for redirect
+        cursor = conn.cursor()
+        cursor.execute("SELECT batch_id FROM enrollment_requests WHERE id = ?", (request_id,))
+        row = cursor.fetchone()
+        batch_id = row[0] if row else 0
+
+        try:
+            req_svc.approve(request_id, reviewed_by=user["id"])
+            flash(request, "Request approved and student enrolled.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}/requests", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/enrollment-requests/{request_id}/reject", response_class=HTMLResponse)
+async def admin_reject_request(request: Request, request_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        req_svc = EnrollmentRequestService(conn)
+        cursor = conn.cursor()
+        cursor.execute("SELECT batch_id FROM enrollment_requests WHERE id = ?", (request_id,))
+        row = cursor.fetchone()
+        batch_id = row[0] if row else 0
+
+        try:
+            req_svc.reject(request_id, reviewed_by=user["id"])
+            flash(request, "Request rejected.", "warning")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}/requests", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── CHAPTERS ──────────────────────────────────────────────────────────────────
+
+@app.get("/admin/courses/{course_id}/chapters", response_class=HTMLResponse)
+async def admin_course_chapters(request: Request, course_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        course_svc = CourseService(conn)
+        chapter_svc = ChapterService(conn)
+        task_svc = TaskService(conn)
+
+        course = course_svc.get_by_id(course_id)
+        if not course:
+            flash(request, "Course not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        chapters = chapter_svc.get_by_course(course_id)
+        all_tasks = task_svc.get_by_course(course_id)
+
+        # Group tasks by chapter_id
+        tasks_by_chapter = {}
+        for t in all_tasks:
+            ch_id = t[2]  # chapter_id column
+            tasks_by_chapter.setdefault(ch_id, []).append(t)
+
+        return render(request, "admin/chapters.html",
+                      page_title=f"Chapters — {course[1]}",
+                      active_page="courses",
+                      course=course,
+                      chapters=chapters,
+                      tasks_by_chapter=tasks_by_chapter)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/courses/{course_id}/chapters/create", response_class=HTMLResponse)
+async def admin_create_chapter(
+    request: Request,
+    course_id: int,
+    title: str = Form(...),
+    description: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        chapter_svc = ChapterService(conn)
+        try:
+            chapter_svc.create(course_id, title.strip(), description or None)
+            flash(request, f"Chapter '{title}' added.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/courses/{course_id}/chapters", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/chapters/{chapter_id}/edit", response_class=HTMLResponse)
+async def admin_edit_chapter(
+    request: Request,
+    chapter_id: int,
+    title: str = Form(...),
+    description: str = Form(""),
+    order_index: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        chapter_svc = ChapterService(conn)
+        ch = chapter_svc.get_by_id(chapter_id)
+        if not ch:
+            flash(request, "Chapter not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+        course_id = ch[1]
+        idx = int(order_index) if order_index.strip() else None
+        try:
+            chapter_svc.update(chapter_id, title.strip(), description or None, order_index=idx)
+            flash(request, "Chapter updated.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/courses/{course_id}/chapters", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/chapters/{chapter_id}/delete", response_class=HTMLResponse)
+async def admin_delete_chapter(request: Request, chapter_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        chapter_svc = ChapterService(conn)
+        ch = chapter_svc.get_by_id(chapter_id)
+        course_id = ch[1] if ch else 0
+        try:
+            chapter_svc.delete(chapter_id)
+            flash(request, "Chapter deleted.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/courses/{course_id}/chapters", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── TASKS ─────────────────────────────────────────────────────────────────────
+
+@app.post("/admin/courses/{course_id}/tasks/create", response_class=HTMLResponse)
+async def admin_create_task(
+    request: Request,
+    course_id: int,
+    title: str = Form(...),
+    task_type: str = Form("assignment"),
+    chapter_id: str = Form(""),
+    due_date: str = Form(""),
+    max_score: float = Form(100.0),
+    description: str = Form(""),
+    is_required: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        task_svc = TaskService(conn)
+        ch_id = int(chapter_id) if chapter_id.strip() else None
+        required = is_required == "1"
+        try:
+            task_svc.create(course_id, title.strip(), description or None,
+                            task_type=task_type, chapter_id=ch_id,
+                            due_date=due_date or None, max_score=max_score,
+                            is_required=required)
+            flash(request, f"Task '{title}' added.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/courses/{course_id}/chapters", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/tasks/{task_id}/delete", response_class=HTMLResponse)
+async def admin_delete_task(request: Request, task_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        task_svc = TaskService(conn)
+        task = task_svc.get_by_id(task_id)
+        course_id = task[1] if task else 0
+        try:
+            task_svc.delete(task_id)
+            flash(request, "Task deleted.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/courses/{course_id}/chapters", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── BATCH ATTENDANCE ──────────────────────────────────────────────────────────
+
+@app.get("/admin/batches/{batch_id}/attendance", response_class=HTMLResponse)
+async def admin_batch_attendance(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        session_svc = SessionService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+        att_svc = BatchAttendanceService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            flash(request, "Batch not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        sessions = session_svc.get_by_batch(batch_id)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        summary = att_svc.get_attendance_summary(batch_id)
+
+        return render(request, "admin/batch_attendance.html",
+                      page_title="Batch Attendance",
+                      active_page="attendance",
+                      batch=batch,
+                      sessions=sessions,
+                      trainees=trainees,
+                      summary=summary,
+                      today=today_str())
+    finally:
+        conn.close()
+
+
+@app.post("/admin/batches/{batch_id}/attendance/record", response_class=HTMLResponse)
+async def admin_batch_record_attendance(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    form = await request.form()
+    date_val = form.get("date", today_str())
+    session_id_raw = form.get("session_id", "")
+    session_id = int(session_id_raw) if session_id_raw.strip() else None
+
+    conn = get_db()
+    try:
+        att_svc = BatchAttendanceService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        records = []
+        for t in trainees:
+            tid = t[0]
+            status = form.get(f"status_{tid}", "absent")
+            notes = form.get(f"notes_{tid}", "")
+            records.append({"trainee_id": tid, "status": status, "notes": notes or None})
+
+        saved, errors = att_svc.record_bulk(batch_id, date_val, records,
+                                            session_id=session_id, recorded_by=user["id"])
+
+        if errors:
+            flash(request, f"{saved} recorded. Errors: {'; '.join(errors)}", "warning")
+        else:
+            flash(request, f"Attendance for {date_val} saved ({saved} records).", "success")
+        return RedirectResponse(f"/admin/batches/{batch_id}/attendance", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── GRADING COMPONENTS ────────────────────────────────────────────────────────
+
+@app.post("/admin/batches/{batch_id}/grading-components/create", response_class=HTMLResponse)
+async def admin_create_grading_component(
+    request: Request,
+    batch_id: int,
+    name: str = Form(...),
+    weight: float = Form(...),
+    description: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        grading_svc = GradingService(conn)
+        try:
+            grading_svc.create_component(batch_id, name.strip(), weight, description or None)
+            flash(request, f"Component '{name}' added.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/grading-components/{component_id}/delete", response_class=HTMLResponse)
+async def admin_delete_grading_component(request: Request, component_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        grading_svc = GradingService(conn)
+        # Find batch_id for redirect
+        cursor = conn.cursor()
+        cursor.execute("SELECT batch_id FROM grading_components WHERE id = ?", (component_id,))
+        row = cursor.fetchone()
+        batch_id = row[0] if row else 0
+        try:
+            grading_svc.delete_component(component_id)
+            flash(request, "Component deleted.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── BATCH GRADES ──────────────────────────────────────────────────────────────
+
+@app.get("/admin/batches/{batch_id}/grades", response_class=HTMLResponse)
+async def admin_batch_grades(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        grading_svc = GradingService(conn)
+        bonus_svc = BonusService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            flash(request, "Batch not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        components = grading_svc.get_components(batch_id)
+        total_weight = grading_svc.get_total_weight(batch_id)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
+
+        # Build grades summary: (tid, name, email, {comp_id: score}, final, bonus)
+        grades_summary = []
+        for t in trainees:
+            tid = t[0]
+            scores_raw = grading_svc.get_scores_for_trainee(batch_id, tid)
+            scores_dict = {s[0]: s[3] for s in scores_raw}
+            final = grading_svc.calculate_final_grade(batch_id, tid)
+            bonus = bonus_totals.get(tid, 0)
+            grades_summary.append((tid, t[1], t[2], scores_dict, final, bonus))
+
+        return render(request, "admin/batch_grades.html",
+                      page_title=f"Grades — {batch[2]}",
+                      active_page="grades",
+                      batch=batch,
+                      components=components,
+                      total_weight=total_weight,
+                      trainees=trainees,
+                      grades_summary=grades_summary)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/batches/{batch_id}/grades/save", response_class=HTMLResponse)
+async def admin_save_batch_grades(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    form = await request.form()
+    conn = get_db()
+    try:
+        grading_svc = GradingService(conn)
+        bonus_svc = BonusService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        components = grading_svc.get_components(batch_id)
+        saved = 0
+        errors = []
+
+        for t in trainees:
+            tid = t[0]
+            for comp in components:
+                cid = comp[0]
+                key = f"score_{tid}_{cid}"
+                val = form.get(key, "").strip()
+                if not val:
+                    continue
+                try:
+                    score = float(val)
+                    grading_svc.set_score(cid, tid, score, recorded_by=user["id"])
+                    saved += 1
+                except (ValueError, TypeError) as e:
+                    errors.append(f"Trainee {t[1]}, {comp[2]}: {e}")
+
+            # Handle bonus
+            bonus_key = f"bonus_{tid}"
+            bonus_val = form.get(bonus_key, "").strip()
+            if bonus_val:
+                try:
+                    bonus_amount = float(bonus_val)
+                    if bonus_amount > 0:
+                        # Check if bonus already exists for this batch/trainee — just add if new
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            "SELECT COALESCE(SUM(amount),0) FROM student_bonuses WHERE trainee_id=? AND batch_id=?",
+                            (tid, batch_id)
+                        )
+                        existing_bonus = cursor.fetchone()[0]
+                        if abs(bonus_amount - existing_bonus) > 0.001:
+                            # Replace with single bonus entry
+                            cursor.execute(
+                                "DELETE FROM student_bonuses WHERE trainee_id=? AND batch_id=?",
+                                (tid, batch_id)
+                            )
+                            conn.commit()
+                            if bonus_amount > 0:
+                                bonus_svc.award(tid, bonus_amount, "Grade bonus",
+                                               awarded_by=user["id"], batch_id=batch_id)
+                except (ValueError, TypeError):
+                    pass
+
+        if errors:
+            flash(request, f"{saved} saved. Errors: {'; '.join(errors[:3])}", "warning")
+        else:
+            flash(request, f"{saved} grade(s) saved successfully.", "success")
+        return RedirectResponse(f"/admin/batches/{batch_id}/grades", status_code=302)
+    finally:
+        conn.close()
+
+
+# ── EXCEL IMPORT / EXPORT ─────────────────────────────────────────────────────
+
+@app.get("/admin/batches/{batch_id}/import")
+async def admin_batch_import_page(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            flash(request, "Batch not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        # Generate and return the template for download
+        try:
+            template_bytes = excel_service.generate_enrollment_template(batch[2])
+            filename = f"enrollment_template_{batch[2].replace(' ', '_')}.xlsx"
+            return StreamingResponse(
+                io.BytesIO(template_bytes),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+            )
+        except ImportError:
+            flash(request, "openpyxl not installed on server.", "error")
+            return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/batches/{batch_id}/import", response_class=HTMLResponse)
+async def admin_batch_import_upload(
+    request: Request,
+    batch_id: int,
+    file: UploadFile = File(...),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        file_bytes = await file.read()
+        try:
+            records = excel_service.parse_enrollment_import(file_bytes)
+        except Exception as e:
+            flash(request, f"Could not parse file: {e}", "error")
+            return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+
+        admin_svc = AdminService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+
+        trainee_ids = []
+        lookup_errors = []
+        for rec in records:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE email = ? AND role = 'trainee'", (rec["email"],))
+            row = cursor.fetchone()
+            if row:
+                trainee_ids.append(row[0])
+            else:
+                lookup_errors.append(f"Not found: {rec['email']}")
+
+        successes, enroll_errors = enroll_svc.bulk_enroll(batch_id, trainee_ids, enrolled_by=user["id"])
+        all_errors = lookup_errors + enroll_errors
+
+        if all_errors:
+            flash(request, f"{len(successes)} enrolled. {len(all_errors)} errors: {'; '.join(all_errors[:3])}", "warning")
+        else:
+            flash(request, f"{len(successes)} student(s) enrolled from Excel.", "success")
+        return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.get("/admin/batches/{batch_id}/export-attendance")
+async def admin_export_attendance(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        att_svc = BatchAttendanceService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        attendance_data = att_svc.get_batch_attendance(batch_id)
+        # attendance_data: (uid, uname, date, status, notes, session_title)
+        formatted = [(r[1], r[2], r[3], r[5]) for r in attendance_data]
+
+        try:
+            file_bytes = excel_service.export_attendance(batch[2], formatted)
+            filename = f"attendance_{batch[2].replace(' ', '_')}.xlsx"
+            return StreamingResponse(
+                io.BytesIO(file_bytes),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+            )
+        except ImportError:
+            flash(request, "openpyxl not installed on server.", "error")
+            return RedirectResponse(f"/admin/batches/{batch_id}", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.get("/admin/batches/{batch_id}/export-grades")
+async def admin_export_grades(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        grading_svc = GradingService(conn)
+        bonus_svc = BonusService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        components = grading_svc.get_components(batch_id)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
+
+        trainee_grades = []
+        for t in trainees:
+            tid = t[0]
+            scores_raw = grading_svc.get_scores_for_trainee(batch_id, tid)
+            scores_dict = {s[0]: s[3] for s in scores_raw}
+            final = grading_svc.calculate_final_grade(batch_id, tid)
+            bonus = bonus_totals.get(tid, 0)
+            trainee_grades.append((tid, t[1], t[2], scores_dict, final, bonus))
+
+        try:
+            file_bytes = excel_service.export_grades(batch[2], components, trainee_grades)
+            filename = f"grades_{batch[2].replace(' ', '_')}.xlsx"
+            return StreamingResponse(
+                io.BytesIO(file_bytes),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+            )
+        except ImportError:
+            flash(request, "openpyxl not installed.", "error")
+            return RedirectResponse(f"/admin/batches/{batch_id}/grades", status_code=302)
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STUDENT — BATCH BROWSING & ENROLLMENT REQUESTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/trainee/batches", response_class=HTMLResponse)
+async def trainee_batches(request: Request):
+    user = require_role(request, "trainee")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        enroll_svc = BatchEnrollmentService(conn)
+        req_svc = EnrollmentRequestService(conn)
+
+        my_batches = enroll_svc.get_trainee_batches(user["id"])
+        my_requests = req_svc.get_trainee_requests(user["id"])
+
+        return render(request, "trainee/batches.html",
+                      page_title="My Batches",
+                      active_page="batches",
+                      my_batches=my_batches,
+                      my_requests=my_requests)
+    finally:
+        conn.close()
+
+
+@app.get("/trainee/browse", response_class=HTMLResponse)
+async def trainee_browse_courses(request: Request):
+    user = require_role(request, "trainee")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        course_svc = CourseService(conn)
+        batch_svc = BatchService(conn)
+
+        courses = course_svc.get_active_courses()
+        # For each course, get its open batches
+        courses_with_batches = []
+        for c in courses:
+            batches = batch_svc.get_by_course(c[0], include_cancelled=False)
+            open_batches = [b for b in batches if b[8] in ("upcoming", "active")]
+            courses_with_batches.append((c, open_batches))
+
+        return render(request, "trainee/browse.html",
+                      page_title="Browse Courses",
+                      active_page="browse",
+                      courses_with_batches=courses_with_batches)
+    finally:
+        conn.close()
+
+
+@app.post("/trainee/batches/{batch_id}/request", response_class=HTMLResponse)
+async def trainee_request_enrollment(
+    request: Request,
+    batch_id: int,
+    trainee_note: str = Form(""),
+):
+    user = require_role(request, "trainee")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        req_svc = EnrollmentRequestService(conn)
+        try:
+            req_svc.submit_request(batch_id, user["id"], trainee_note or None)
+            flash(request, "Enrollment request submitted. You will be notified when reviewed.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse("/trainee/browse", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.get("/trainee/batches/{batch_id}/progress", response_class=HTMLResponse)
+async def trainee_batch_progress(request: Request, batch_id: int):
+    user = require_role(request, "trainee")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        enroll_svc = BatchEnrollmentService(conn)
+        batch_svc = BatchService(conn)
+        att_svc = BatchAttendanceService(conn)
+        grading_svc = GradingService(conn)
+        bonus_svc = BonusService(conn)
+        submission_svc = SubmissionService(conn)
+
+        if not enroll_svc.is_enrolled(batch_id, user["id"]):
+            flash(request, "You are not enrolled in this batch.", "error")
+            return RedirectResponse("/trainee/batches", status_code=302)
+
+        batch = batch_svc.get_by_id(batch_id)
+        attendance = att_svc.get_trainee_attendance(batch_id, user["id"])
+        scores = grading_svc.get_scores_for_trainee(batch_id, user["id"])
+        final_grade = grading_svc.calculate_final_grade(batch_id, user["id"])
+        bonuses = bonus_svc.get_trainee_bonuses(user["id"], batch_id=batch_id)
+        total_bonus = bonus_svc.get_total_bonus(user["id"], batch_id=batch_id)
+        submissions = submission_svc.get_by_trainee(user["id"])
+
+        task_svc = TaskService(conn)
+        tasks = task_svc.get_by_course(batch[1])
+        task_submissions_map = {s[1]: s for s in submissions}
+
+        # Attendance stats
+        total_att = len(attendance)
+        present_count = sum(1 for a in attendance if a[1] == "present")
+        att_rate = round(present_count / total_att * 100, 1) if total_att else 0
+
+        return render(request, "trainee/batch_progress.html",
+                      page_title=f"Progress — {batch[2]}",
+                      active_page="batches",
+                      batch=batch,
+                      attendance=attendance,
+                      scores=scores,
+                      final_grade=final_grade,
+                      bonuses=bonuses,
+                      total_bonus=total_bonus,
+                      tasks=tasks,
+                      submissions=submissions,
+                      task_submissions_map=task_submissions_map,
+                      total_att=total_att,
+                      present_count=present_count,
+                      att_rate=att_rate)
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# INSTRUCTOR — BATCH MANAGEMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/instructor/batches", response_class=HTMLResponse)
+async def instructor_batches(request: Request):
+    user = require_role(request, "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        batches = batch_svc.get_instructor_batches(user["id"])
+        return render(request, "instructor/batches.html",
+                      page_title="My Batches",
+                      active_page="batches",
+                      batches=batches)
+    finally:
+        conn.close()
+
+
+@app.get("/instructor/batches/{batch_id}/attendance", response_class=HTMLResponse)
+async def instructor_batch_attendance(request: Request, batch_id: int):
+    user = require_role(request, "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        session_svc = SessionService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+        att_svc = BatchAttendanceService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch or batch[3] != user["id"]:
+            flash(request, "Batch not found or not assigned to you.", "error")
+            return RedirectResponse("/instructor/batches", status_code=302)
+
+        sessions = session_svc.get_by_batch(batch_id)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        summary = att_svc.get_attendance_summary(batch_id)
+
+        return render(request, "admin/batch_attendance.html",
+                      page_title="Batch Attendance",
+                      active_page="attendance",
+                      batch=batch,
+                      sessions=sessions,
+                      trainees=trainees,
+                      summary=summary,
+                      today=today_str())
+    finally:
+        conn.close()
+
+
+@app.post("/instructor/batches/{batch_id}/attendance/record", response_class=HTMLResponse)
+async def instructor_batch_record_attendance(request: Request, batch_id: int):
+    user = require_role(request, "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    form = await request.form()
+    date_val = form.get("date", today_str())
+    session_id_raw = form.get("session_id", "")
+    session_id = int(session_id_raw) if session_id_raw.strip() else None
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch or batch[3] != user["id"]:
+            flash(request, "Not authorized.", "error")
+            return RedirectResponse("/instructor/batches", status_code=302)
+
+        att_svc = BatchAttendanceService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        records = []
+        for t in trainees:
+            tid = t[0]
+            status = form.get(f"status_{tid}", "absent")
+            notes = form.get(f"notes_{tid}", "")
+            records.append({"trainee_id": tid, "status": status, "notes": notes or None})
+
+        saved, errors = att_svc.record_bulk(batch_id, date_val, records,
+                                            session_id=session_id, recorded_by=user["id"])
+        if errors:
+            flash(request, f"{saved} recorded. Errors: {'; '.join(errors)}", "warning")
+        else:
+            flash(request, f"Attendance for {date_val} saved.", "success")
+        return RedirectResponse(f"/instructor/batches/{batch_id}/attendance", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.get("/instructor/batches/{batch_id}/grades", response_class=HTMLResponse)
+async def instructor_batch_grades(request: Request, batch_id: int):
+    user = require_role(request, "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        grading_svc = GradingService(conn)
+        bonus_svc = BonusService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch or batch[3] != user["id"]:
+            flash(request, "Not authorized.", "error")
+            return RedirectResponse("/instructor/batches", status_code=302)
+
+        components = grading_svc.get_components(batch_id)
+        total_weight = grading_svc.get_total_weight(batch_id)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
+
+        grades_summary = []
+        for t in trainees:
+            tid = t[0]
+            scores_raw = grading_svc.get_scores_for_trainee(batch_id, tid)
+            scores_dict = {s[0]: s[3] for s in scores_raw}
+            final = grading_svc.calculate_final_grade(batch_id, tid)
+            bonus = bonus_totals.get(tid, 0)
+            grades_summary.append((tid, t[1], t[2], scores_dict, final, bonus))
+
+        return render(request, "admin/batch_grades.html",
+                      page_title=f"Grades — {batch[2]}",
+                      active_page="grades",
+                      batch=batch,
+                      components=components,
+                      total_weight=total_weight,
+                      trainees=trainees,
+                      grades_summary=grades_summary)
+    finally:
+        conn.close()
+
+
+@app.post("/instructor/batches/{batch_id}/grades/save", response_class=HTMLResponse)
+async def instructor_save_batch_grades(request: Request, batch_id: int):
+    user = require_role(request, "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    form = await request.form()
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch or batch[3] != user["id"]:
+            flash(request, "Not authorized.", "error")
+            return RedirectResponse("/instructor/batches", status_code=302)
+
+        grading_svc = GradingService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        components = grading_svc.get_components(batch_id)
+        saved = 0
+
+        for t in trainees:
+            tid = t[0]
+            for comp in components:
+                cid = comp[0]
+                val = form.get(f"score_{tid}_{cid}", "").strip()
+                if not val:
+                    continue
+                try:
+                    grading_svc.set_score(cid, tid, float(val), recorded_by=user["id"])
+                    saved += 1
+                except (ValueError, TypeError):
+                    pass
+
+        flash(request, f"{saved} grade(s) saved.", "success")
+        return RedirectResponse(f"/instructor/batches/{batch_id}/grades", status_code=302)
+    finally:
+        conn.close()
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STUDENT TASK SUBMISSION
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/trainee/tasks/{task_id}/submit", response_class=HTMLResponse)
+async def trainee_submit_task(
+    request: Request,
+    task_id: int,
+    batch_id: int = Form(...),
+    submission_url: str = Form(""),
+    submission_text: str = Form(""),
+):
+    user = require_role(request, "trainee")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        sub_svc = SubmissionService(conn)
+        url = submission_url.strip() if submission_url else None
+        text = submission_text.strip() if submission_text else None
+        try:
+            sub_svc.submit(task_id, user["id"], batch_id=batch_id,
+                           submission_url=url, submission_text=text)
+            flash(request, "Task solution submitted successfully!", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/trainee/batches/{batch_id}/progress", status_code=302)
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# INSTRUCTOR & ADMIN — TASK SUBMISSION REVIEWS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/instructor/batches/{batch_id}/submissions", response_class=HTMLResponse)
+async def instructor_batch_submissions(request: Request, batch_id: int):
+    user = require_role(request, "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch or batch[3] != user["id"]:
+            flash(request, "Not authorized.", "error")
+            return RedirectResponse("/instructor/batches", status_code=302)
+
+        sub_svc = SubmissionService(conn)
+        submissions = sub_svc.get_by_batch(batch_id)
+        return render(request, "instructor/batch_submissions.html",
+                      page_title=f"Submissions — {batch[2]}",
+                      active_page="batches",
+                      batch=batch,
+                      submissions=submissions)
+    finally:
+        conn.close()
+
+
+@app.post("/instructor/submissions/{submission_id}/review", response_class=HTMLResponse)
+async def instructor_review_submission(
+    request: Request,
+    submission_id: int,
+    status: str = Form(...),
+    score: str = Form(""),
+    feedback: str = Form(""),
+):
+    user = require_role(request, "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        sub_svc = SubmissionService(conn)
+        sub = sub_svc.get_by_id(submission_id)
+        if not sub:
+            flash(request, "Submission not found.", "error")
+            return RedirectResponse("/instructor/batches", status_code=302)
+
+        batch_id = sub[5]
+        score_val = float(score) if score and score.strip() else None
+        feedback_val = feedback.strip() if feedback else None
+        try:
+            sub_svc.review(submission_id, status=status, score=score_val,
+                           feedback=feedback_val, reviewed_by=user["id"])
+            flash(request, "Submission review saved successfully.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/instructor/batches/{batch_id}/submissions", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.get("/admin/batches/{batch_id}/submissions", response_class=HTMLResponse)
+async def admin_batch_submissions(request: Request, batch_id: int):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            flash(request, "Batch not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        sub_svc = SubmissionService(conn)
+        submissions = sub_svc.get_by_batch(batch_id)
+        return render(request, "instructor/batch_submissions.html",
+                      page_title=f"Submissions — {batch[2]}",
+                      active_page="courses",
+                      batch=batch,
+                      submissions=submissions)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/submissions/{submission_id}/review", response_class=HTMLResponse)
+async def admin_review_submission(
+    request: Request,
+    submission_id: int,
+    status: str = Form(...),
+    score: str = Form(""),
+    feedback: str = Form(""),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        sub_svc = SubmissionService(conn)
+        sub = sub_svc.get_by_id(submission_id)
+        if not sub:
+            flash(request, "Submission not found.", "error")
+            return RedirectResponse("/admin/courses", status_code=302)
+
+        batch_id = sub[5]
+        score_val = float(score) if score and score.strip() else None
+        feedback_val = feedback.strip() if feedback else None
+        try:
+            sub_svc.review(submission_id, status=status, score=score_val,
+                           feedback=feedback_val, reviewed_by=user["id"])
+            flash(request, "Submission review saved successfully.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}/submissions", status_code=302)
+    finally:
+        conn.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BONUS MANAGEMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/admin/batches/{batch_id}/bonuses/add", response_class=HTMLResponse)
+async def admin_add_batch_bonus(
+    request: Request,
+    batch_id: int,
+    trainee_id: int = Form(...),
+    amount: float = Form(...),
+    reason: str = Form(...),
+):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        bonus_svc = BonusService(conn)
+        try:
+            bonus_svc.award(trainee_id, amount, reason.strip(), awarded_by=user["id"], batch_id=batch_id)
+            flash(request, f"+{amount} bonus points awarded.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(f"/admin/batches/{batch_id}/grades", status_code=302)
+    finally:
+        conn.close()
+
+
+@app.post("/admin/bonuses/{bonus_id}/delete", response_class=HTMLResponse)
+async def admin_delete_bonus(request: Request, bonus_id: int, redirect_to: str = Form("/admin/courses")):
+    user = require_role(request, "admin")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        bonus_svc = BonusService(conn)
+        try:
+            bonus_svc.delete(bonus_id)
+            flash(request, "Bonus removed.", "success")
+        except ValueError as e:
+            flash(request, str(e), "error")
+        return RedirectResponse(redirect_to, status_code=302)
     finally:
         conn.close()
 

@@ -1,0 +1,144 @@
+{% extends "layout.html" %}
+{% block title %}My Batches — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header page-header-row">
+    <div>
+      <h1 class="page-title">My Learning Batches</h1>
+      <p class="page-subtitle">Track your enrolled batches, sessions, grades, and pending requests</p>
+    </div>
+    <a href="/trainee/browse" class="btn btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      Browse Courses
+    </a>
+  </div>
+
+  {% if flash_message %}
+  <div class="alert alert-{{ flash_type }}" role="alert" style="margin-bottom:20px;">
+    {{ flash_message }}
+  </div>
+  {% endif %}
+
+  <!-- Active & Enrolled Batches -->
+  <div style="margin-bottom:32px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="font-size:1.15rem; font-weight:700; margin:0; color:var(--color-text);">Enrolled Batches</h2>
+      <span class="badge badge-neutral">{{ my_batches|length }} batch{{ 'es' if my_batches|length != 1 else '' }}</span>
+    </div>
+
+    {% if my_batches %}
+    <div class="courses-grid">
+      {% for b in my_batches %}
+      <div class="course-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="course-card-header">
+            <div class="course-avatar" style="background:var(--color-primary-subtle); color:var(--color-primary);">
+              {{ b[3][0].upper() }}
+            </div>
+            <div class="flex gap-2">
+              <span class="badge {{ 'badge-success' if b[7] == 'active' else 'badge-neutral' }}">
+                {{ b[7].capitalize() }}
+              </span>
+              <span class="badge badge-neutral">
+                {{ b[6].capitalize() }}
+              </span>
+            </div>
+          </div>
+
+          <div style="font-size:0.82rem; font-weight:600; color:var(--color-primary); margin-top:6px; text-transform:uppercase; letter-spacing:0.5px;">
+            {{ b[3] }}
+          </div>
+          <div class="course-name" style="margin-top:2px;">{{ b[1] }}</div>
+
+          {% if b[4] or b[5] %}
+          <div style="font-size:0.8rem; color:var(--color-text-muted); margin-top:8px; display:flex; align-items:center; gap:6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>{{ b[4] or '—' }} &rarr; {{ b[5] or '—' }}</span>
+          </div>
+          {% endif %}
+          <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">
+            Enrolled: {{ b[8][:10] if b[8] else '—' }}
+          </div>
+        </div>
+
+        <div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--color-border);">
+          <a href="/trainee/batches/{{ b[0] }}/progress" class="btn btn-primary btn-sm btn-full" style="justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            View Batch Progress
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          </div>
+          <div class="empty-title">Not enrolled in any batches</div>
+          <div class="empty-description">Browse our courses and request enrollment into an upcoming batch to get started.</div>
+          <a href="/trainee/browse" class="btn btn-primary" style="margin-top:8px;">Browse Courses</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Enrollment Requests History -->
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="font-size:1.15rem; font-weight:700; margin:0; color:var(--color-text);">My Enrollment Requests</h2>
+      <span class="badge badge-neutral">{{ my_requests|length }}</span>
+    </div>
+
+    {% if my_requests %}
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Course & Batch</th>
+                <th>Requested At</th>
+                <th>Status</th>
+                <th>Your Note</th>
+                <th>Academy Feedback</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in my_requests %}
+              <tr>
+                <td>
+                  <div style="font-weight:600;">{{ r[3] }}</div>
+                  <div class="muted text-sm">{{ r[2] }}</div>
+                </td>
+                <td class="text-sm muted">{{ r[10] }}</td>
+                <td>
+                  <span class="badge {{ 'badge-success' if r[7] == 'approved' else ('badge-warning' if r[7] == 'pending' else 'badge-error') }}">
+                    {{ r[7].capitalize() }}
+                  </span>
+                </td>
+                <td class="text-sm muted" style="max-width:200px;">
+                  {{ r[8] or '—' }}
+                </td>
+                <td class="text-sm" style="max-width:200px;">
+                  {% if r[9] %}
+                  <span style="color:var(--color-text);">{{ r[9] }}</span>
+                  {% else %}
+                  <span class="muted text-sm">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

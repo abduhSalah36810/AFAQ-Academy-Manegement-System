@@ -1,0 +1,292 @@
+{% extends "layout.html" %}
+{% block title %}Batch — {{ batch[2] }} — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+
+  <!-- Header -->
+  <div class="page-header page-header-row">
+    <div>
+      <div class="breadcrumb-nav">
+        <a href="/admin/courses">Courses</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="/admin/courses/{{ batch[1] }}/batches">{{ batch[14] }}</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span>{{ batch[2] }}</span>
+      </div>
+      <h1 class="page-title">{{ batch[2] }}</h1>
+      <p class="page-subtitle">
+        <span class="badge {{ 'badge-success' if batch[11] == 'active' else ('badge-warning' if batch[11] == 'upcoming' else ('badge-info' if batch[11] == 'completed' else 'badge-neutral')) }}">{{ batch[11].capitalize() }}</span>
+        &nbsp;{{ enrolled_count }} / {{ batch[5] if batch[5] > 0 else '∞' }} enrolled
+        {% if batch[10] > 0 %} &nbsp;·&nbsp; Cutoff after {{ batch[10] }} sessions{% endif %}
+      </p>
+    </div>
+    <div class="flex gap-2 flex-wrap">
+      <a href="/admin/batches/{{ batch[0] }}/requests" class="btn btn-secondary">
+        Requests
+        {% if pending_requests_count > 0 %}
+        <span class="badge badge-warning" style="margin-left:4px;">{{ pending_requests_count }}</span>
+        {% endif %}
+      </a>
+      <a href="/admin/batches/{{ batch[0] }}/attendance" class="btn btn-secondary">Attendance</a>
+      <a href="/admin/batches/{{ batch[0] }}/grades" class="btn btn-secondary">Grades</a>
+      <button class="btn btn-primary" data-modal-open="enroll-modal">+ Enroll Student</button>
+    </div>
+  </div>
+
+  {% if flash_message %}
+  <div class="alert alert-{{ flash_type }}">{{ flash_message }}</div>
+  {% endif %}
+
+  <!-- Stats Row -->
+  <div class="stats-grid" style="margin-bottom:20px;">
+    <div class="stat-card">
+      <div class="stat-value">{{ enrolled_count }}</div>
+      <div class="stat-label">Enrolled Students</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ sessions|length }}</div>
+      <div class="stat-label">Total Sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ sessions|selectattr(8,'equalto','completed')|list|length if sessions else 0 }}</div>
+      <div class="stat-label">Completed Sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ pending_requests_count }}</div>
+      <div class="stat-label">Pending Requests</div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+
+    <!-- Sessions Panel -->
+    <div class="card">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 class="card-title">Sessions</h3>
+        <button class="btn btn-primary btn-sm" data-modal-open="add-session-modal">+ Add Session</button>
+      </div>
+      <div class="card-body" style="padding:0;">
+        {% if sessions %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr><th>#</th><th>Title</th><th>Date</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for s in sessions %}
+              <tr>
+                <td>{{ s[3] }}</td>
+                <td style="font-weight:500;">{{ s[2] }}</td>
+                <td class="muted">{{ s[4] or '—' }}</td>
+                <td>
+                  <span class="badge {{ 'badge-success' if s[7] == 'completed' else ('badge-neutral' if s[7] == 'cancelled' else 'badge-warning') }}">
+                    {{ s[7].capitalize() }}
+                  </span>
+                </td>
+                <td>
+                  <form method="post" action="/admin/sessions/{{ s[0] }}/status" style="display:inline;">
+                    <select name="status" class="form-select" style="font-size:0.78rem;padding:2px 6px;width:auto;"
+                      onchange="this.form.submit()">
+                      <option value="planned"    {{ 'selected' if s[7]=='planned'    else '' }}>Planned</option>
+                      <option value="completed"  {{ 'selected' if s[7]=='completed'  else '' }}>Completed</option>
+                      <option value="cancelled"  {{ 'selected' if s[7]=='cancelled'  else '' }}>Cancelled</option>
+                    </select>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:40px;">
+          <div class="empty-title">No sessions yet</div>
+          <div class="empty-description">Add the first session for this batch.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Students Panel -->
+    <div class="card">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 class="card-title">Students ({{ enrolled_count }})</h3>
+        <div class="flex gap-2">
+          <a href="/admin/batches/{{ batch[0] }}/import" class="btn btn-ghost btn-sm">Import Excel</a>
+          <a href="/admin/batches/{{ batch[0] }}/export-attendance" class="btn btn-ghost btn-sm">Export Attendance</a>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        {% if trainees %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Enrolled</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for t in trainees %}
+              <tr>
+                <td style="font-weight:500;">{{ t[1] }}</td>
+                <td class="muted">{{ t[2] }}</td>
+                <td class="muted" style="font-size:0.78rem;">{{ t[5][:10] if t[5] else '' }}</td>
+                <td>
+                  <form method="post" action="/admin/batches/{{ batch[0] }}/unenroll"
+                    onsubmit="return confirm('Remove {{ t[1] }} from this batch?');" style="display:inline;">
+                    <input type="hidden" name="trainee_id" value="{{ t[0] }}">
+                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Remove</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:40px;">
+          <div class="empty-title">No students enrolled</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- grid -->
+
+  <!-- Grading Components Section -->
+  <div class="card" style="margin-top:20px;">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h3 class="card-title">Grading Components</h3>
+        <p class="muted" style="font-size:0.83rem;margin-top:2px;">
+          Total weight: <strong>{{ total_weight }}%</strong>
+          {% if total_weight < 100 %}<span style="color:var(--color-warning);"> ({{ 100 - total_weight }}% unallocated)</span>{% endif %}
+          {% if total_weight == 100 %}<span style="color:var(--color-success);"> ✓ Complete</span>{% endif %}
+        </p>
+      </div>
+      <button class="btn btn-primary btn-sm" data-modal-open="add-component-modal">+ Add Component</button>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if components %}
+      <table class="table">
+        <thead><tr><th>Component</th><th>Weight</th><th>Description</th><th></th></tr></thead>
+        <tbody>
+          {% for c in components %}
+          <tr>
+            <td style="font-weight:500;">{{ c[2] }}</td>
+            <td><span class="badge badge-info">{{ c[3] }}%</span></td>
+            <td class="muted">{{ c[4] or '—' }}</td>
+            <td>
+              <form method="post" action="/admin/grading-components/{{ c[0] }}/delete"
+                onsubmit="return confirm('Delete component {{ c[2] }}?');" style="display:inline;">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state" style="padding:32px;">
+        <div class="empty-title">No grading components</div>
+        <div class="empty-description">Add components like Assignments (40%), Midterm (30%), Final (30%).</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div><!-- page-content -->
+
+<!-- Enroll Student Modal -->
+<div id="enroll-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Enroll Student</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <form method="post" action="/admin/batches/{{ batch[0] }}/enroll">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="enroll-trainee">Student *</label>
+          <select id="enroll-trainee" name="trainee_id" class="form-select" required>
+            <option value="">— Select student —</option>
+            {% for t in all_trainees %}
+            <option value="{{ t[0] }}">{{ t[1] }} ({{ t[2] }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Enroll</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Session Modal -->
+<div id="add-session-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Add Session</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <form method="post" action="/admin/batches/{{ batch[0] }}/sessions/create">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="session-title">Session Title *</label>
+          <input id="session-title" name="title" type="text" class="form-input" placeholder="e.g. Introduction to the Course" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="session-date">Date</label>
+            <input id="session-date" name="date" type="date" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="session-number">Session #</label>
+            <input id="session-number" name="session_number" type="number" class="form-input" placeholder="Auto">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="session-notes">Notes</label>
+          <textarea id="session-notes" name="notes" class="form-input" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Session</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Grading Component Modal -->
+<div id="add-component-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Add Grading Component</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <form method="post" action="/admin/batches/{{ batch[0] }}/grading-components/create">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="comp-name">Component Name *</label>
+          <input id="comp-name" name="name" type="text" class="form-input" placeholder="e.g. Assignments" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="comp-weight">Weight (%) *</label>
+          <input id="comp-weight" name="weight" type="number" class="form-input" step="0.01" min="1" max="{{ 100 - total_weight }}" required>
+          <span class="form-hint">Max available: {{ 100 - total_weight }}%</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="comp-desc">Description</label>
+          <input id="comp-desc" name="description" type="text" class="form-input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Component</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

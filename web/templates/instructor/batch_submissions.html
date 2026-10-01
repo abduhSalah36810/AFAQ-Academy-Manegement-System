@@ -1,0 +1,182 @@
+{% extends "layout.html" %}
+{% block title %}Task Submissions — {{ batch[2] }} — AFAQ Academy{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="page-header page-header-row">
+    <div>
+      <div class="breadcrumb-nav">
+        {% if user.role == "admin" %}
+        <a href="/admin/courses">Courses</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="/admin/batches/{{ batch[0] }}">{{ batch[2] }}</a>
+        {% else %}
+        <a href="/instructor/batches">Batches</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span>{{ batch[2] }}</span>
+        {% endif %}
+      </div>
+      <h1 class="page-title">Task Submissions</h1>
+      <p class="page-subtitle">{{ submissions|length }} submission{{ 's' if submissions|length != 1 else '' }} in this batch</p>
+    </div>
+  </div>
+
+  {% if flash_message %}
+  <div class="alert alert-{{ flash_type }}" role="alert" style="margin-bottom:20px;">
+    {{ flash_message }}
+  </div>
+  {% endif %}
+
+  <!-- Submissions Table Card -->
+  <div class="card">
+    <div class="card-body" style="padding:0;">
+      {% if submissions %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Student</th>
+              <th>Submitted</th>
+              <th>Content / Link</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th>Feedback</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in submissions %}
+            {# s format from SubmissionService: id, task_id, task_title, trainee_id, trainee_name, trainee_email, submitted_at, status, score, feedback, max_score, submission_url, submission_text #}
+            <tr>
+              <td>
+                <div style="font-weight:600;">{{ s[2] }}</div>
+                <div class="muted text-sm">Max: {{ s[10] }} pts</div>
+              </td>
+              <td>
+                <div style="font-weight:600;">{{ s[4] }}</div>
+                <div class="muted text-sm">{{ s[5] }}</div>
+              </td>
+              <td class="text-sm muted">
+                {{ s[6] or '—' }}
+              </td>
+              <td>
+                {% if s[11] %}
+                <a href="{{ s[11] }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm" style="display:inline-flex; align-items:center; gap:4px; color:var(--color-primary);">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  View Link
+                </a>
+                {% endif %}
+                {% if s[12] %}
+                <div style="font-size:0.8rem; color:var(--color-text-muted); max-width:220px; white-space:pre-wrap; word-break:break-word; max-height:60px; overflow-y:auto; background:var(--color-surface); padding:4px 8px; border-radius:6px; margin-top:2px;">{{ s[12] }}</div>
+                {% endif %}
+                {% if not s[11] and not s[12] %}
+                <span class="muted text-sm">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge {{ 'badge-success' if s[7] == 'approved' else ('badge-warning' if s[7] in ('submitted', 'under_review') else ('badge-error' if s[7] == 'rejected' else 'badge-info')) }}">
+                  {{ s[7]|replace('_', ' ')|capitalize }}
+                </span>
+              </td>
+              <td>
+                {% if s[8] is not none %}
+                <span style="font-weight:700; color:var(--color-success);">{{ s[8] }}</span>
+                <span class="muted text-sm">/ {{ s[10] }}</span>
+                {% else %}
+                <span class="muted">—</span>
+                {% endif %}
+              </td>
+              <td style="max-width:200px;">
+                <span class="text-sm muted" style="display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ s[9] or '' }}">
+                  {{ s[9] or '—' }}
+                </span>
+              </td>
+              <td style="text-align:right;">
+                <button type="button" class="btn btn-secondary btn-sm"
+                  onclick="openReviewModal({{ s[0] }}, '{{ s[2]|e }}', '{{ s[4]|e }}', '{{ s[7] }}', {{ s[8] if s[8] is not none else 'null' }}, '{{ (s[9] or '')|e }}', {{ s[10] }})">
+                  Review
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:48px 24px;">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        </div>
+        <div class="empty-title">No submissions yet</div>
+        <div class="empty-description">Students in this batch have not submitted any task solutions yet.</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW SUBMISSION MODAL -->
+<div id="review-submission-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="review-modal-title">Review Submission</span>
+      <button class="modal-close" data-modal-close="review-submission-modal">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="review-submission-form" method="post" action="">
+      <div class="modal-body">
+        <div style="margin-bottom:14px; background:var(--color-surface); padding:10px 14px; border-radius:8px; border:1px solid var(--color-border);">
+          <div style="font-size:0.8rem; color:var(--color-text-muted);">Student</div>
+          <div id="review-student-name" style="font-weight:600;"></div>
+          <div style="font-size:0.8rem; color:var(--color-text-muted); margin-top:4px;">Task</div>
+          <div id="review-task-title" style="font-weight:600;"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="review-status">Decision / Status</label>
+          <select id="review-status" name="status" class="form-select" required>
+            <option value="approved">Approved</option>
+            <option value="needs_revision">Needs Revision</option>
+            <option value="rejected">Rejected</option>
+            <option value="under_review">Under Review</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="review-score">Score <span id="review-max-label" class="muted text-sm"></span></label>
+          <input id="review-score" name="score" type="number" step="0.1" min="0" class="form-input" placeholder="e.g. 95" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="review-feedback">Feedback to Student</label>
+          <textarea id="review-feedback" name="feedback" class="form-input" rows="3" placeholder="Add constructive notes or explanations..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close="review-submission-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Review</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openReviewModal(subId, taskTitle, studentName, status, score, feedback, maxScore) {
+  const form = document.getElementById('review-submission-form');
+  const role = "{{ user.role }}";
+  form.action = (role === 'admin') ? '/admin/submissions/' + subId + '/review' : '/instructor/submissions/' + subId + '/review';
+  document.getElementById('review-student-name').textContent = studentName;
+  document.getElementById('review-task-title').textContent = taskTitle;
+  document.getElementById('review-status').value = status;
+  document.getElementById('review-score').value = (score !== null) ? score : '';
+  document.getElementById('review-score').max = maxScore;
+  document.getElementById('review-max-label').textContent = '(Max: ' + maxScore + ')';
+  document.getElementById('review-feedback').value = feedback || '';
+
+  const modal = document.getElementById('review-submission-modal');
+  modal.classList.add('active');
+}
+</script>
+{% endblock %}
