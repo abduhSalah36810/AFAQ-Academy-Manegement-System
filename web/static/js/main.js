@@ -55,13 +55,25 @@ function eyeOffIcon() {
 // MODAL
 // ---------------------------------------------------------
 window.openModal = function (id) {
-  const el = document.getElementById(id);
-  el && el.classList.add('open');
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (el) {
+    el.classList.add('open', 'active', 'is-open');
+    document.body.style.overflow = 'hidden';
+  }
 };
 
 window.closeModal = function (id) {
-  const el = document.getElementById(id);
-  el && el.classList.remove('open');
+  if (id) {
+    const el = typeof id === 'string' ? document.getElementById(id) : id;
+    if (el) {
+      el.classList.remove('open', 'active', 'is-open');
+    }
+  } else {
+    document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+      overlay.classList.remove('open', 'active', 'is-open');
+    });
+  }
+  document.body.style.overflow = '';
 };
 
 document.querySelectorAll('[data-modal-open]').forEach(function (btn) {
@@ -69,13 +81,28 @@ document.querySelectorAll('[data-modal-open]').forEach(function (btn) {
 });
 
 document.querySelectorAll('[data-modal-close]').forEach(function (btn) {
-  btn.addEventListener('click', function () { closeModal(btn.dataset.modalClose); });
+  btn.addEventListener('click', function () {
+    const targetId = btn.dataset.modalClose;
+    if (targetId) {
+      closeModal(targetId);
+    } else {
+      const parentOverlay = btn.closest('.modal-overlay');
+      if (parentOverlay) {
+        closeModal(parentOverlay);
+      } else {
+        closeModal();
+      }
+    }
+  });
 });
 
 // Close modal on overlay click
 document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
   overlay.addEventListener('click', function (e) {
-    if (e.target === overlay) overlay.classList.remove('open');
+    if (e.target === overlay) {
+      overlay.classList.remove('open', 'active', 'is-open');
+      document.body.style.overflow = '';
+    }
   });
 });
 

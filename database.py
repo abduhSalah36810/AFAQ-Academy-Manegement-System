@@ -325,6 +325,11 @@ def create_tables():
             enrolled_by INTEGER,
             status TEXT NOT NULL DEFAULT 'active'
                 CHECK (status IN ('active', 'dropped', 'completed')),
+            price REAL DEFAULT 0.0,
+            amount_paid REAL DEFAULT 0.0,
+            payment_status TEXT NOT NULL DEFAULT 'unpaid'
+                CHECK (payment_status IN ('unpaid', 'partially_paid', 'paid')),
+            payment_notes TEXT,
 
             UNIQUE (batch_id, trainee_id),
 
@@ -552,6 +557,17 @@ def create_tables():
         cursor.execute("ALTER TABLE batches ADD COLUMN is_public INTEGER NOT NULL DEFAULT 1")
     if "price" not in batch_cols:
         cursor.execute("ALTER TABLE batches ADD COLUMN price REAL")
+
+    # ── Batch Enrollments: Safe Migrations for Payments ───────────────────────
+    enroll_cols = _col_names(cursor, "batch_enrollments")
+    if "price" not in enroll_cols:
+        cursor.execute("ALTER TABLE batch_enrollments ADD COLUMN price REAL DEFAULT 0.0")
+    if "amount_paid" not in enroll_cols:
+        cursor.execute("ALTER TABLE batch_enrollments ADD COLUMN amount_paid REAL DEFAULT 0.0")
+    if "payment_status" not in enroll_cols:
+        cursor.execute("ALTER TABLE batch_enrollments ADD COLUMN payment_status TEXT DEFAULT 'unpaid'")
+    if "payment_notes" not in enroll_cols:
+        cursor.execute("ALTER TABLE batch_enrollments ADD COLUMN payment_notes TEXT")
 
     # ── Organization Settings (dynamic content for public homepage) ───────────
     connection.execute("""

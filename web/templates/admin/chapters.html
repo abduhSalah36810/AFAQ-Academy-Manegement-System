@@ -6,9 +6,15 @@
   <div class="page-header page-header-row">
     <div>
       <div class="breadcrumb-nav">
+        {% if user.role == "admin" %}
         <a href="/admin/courses">Courses</a>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         <a href="/admin/courses/{{ course[0] }}/batches">{{ course[1] }}</a>
+        {% else %}
+        <a href="/instructor/batches">Batches</a>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span>{{ course[1] }}</span>
+        {% endif %}
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         <span>Chapters</span>
       </div>
@@ -221,13 +227,13 @@ function editChapter(id, title, desc, order) {
   document.getElementById('edit-ch-title').value = title;
   document.getElementById('edit-ch-desc').value = desc;
   document.getElementById('edit-ch-order').value = order;
-  document.getElementById('edit-chapter-modal').classList.add('is-open');
+  openModal('edit-chapter-modal');
 }
 
 function openAddTask(chapterId, chapterName) {
   document.getElementById('task-chapter-id').value = chapterId;
   document.getElementById('task-chapter-name').textContent = chapterName;
-  document.getElementById('add-task-modal').classList.add('is-open');
+  openModal('add-task-modal');
 }
 </script>
 {% endblock %}

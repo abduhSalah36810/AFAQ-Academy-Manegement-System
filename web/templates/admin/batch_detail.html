@@ -110,11 +110,21 @@
 
     <!-- Students Panel -->
     <div class="card">
-      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <h3 class="card-title">Students ({{ enrolled_count }})</h3>
-        <div class="flex gap-2">
-          <a href="/admin/batches/{{ batch[0] }}/import" class="btn btn-ghost btn-sm">Import Excel</a>
-          <a href="/admin/batches/{{ batch[0] }}/export-attendance" class="btn btn-ghost btn-sm">Export Attendance</a>
+        <div class="flex gap-2" style="flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" data-modal-open="import-excel-modal">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Import Excel
+          </button>
+          <a href="/admin/batches/{{ batch[0] }}/export-attendance" class="btn btn-ghost btn-sm" title="Export attendance to Excel">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Attendance .xlsx
+          </a>
+          <a href="/admin/batches/{{ batch[0] }}/export-grades" class="btn btn-ghost btn-sm" title="Export grades to Excel">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Grades .xlsx
+          </a>
         </div>
       </div>
       <div class="card-body" style="padding:0;">
@@ -122,20 +132,51 @@
         <div class="table-responsive">
           <table class="table">
             <thead>
-              <tr><th>Name</th><th>Email</th><th>Enrolled</th><th></th></tr>
+              <tr>
+                <th>Student</th>
+                <th>Price / Fee</th>
+                <th>Paid</th>
+                <th>Status</th>
+                <th>Enrolled</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
             </thead>
             <tbody>
               {% for t in trainees %}
+              {# t: 0:uid, 1:uname, 2:email, 3:img, 4:status, 5:enrolled_at, 6:enrollment_id, 7:price, 8:amount_paid, 9:payment_status, 10:payment_notes #}
               <tr>
-                <td style="font-weight:500;">{{ t[1] }}</td>
-                <td class="muted">{{ t[2] }}</td>
-                <td class="muted" style="font-size:0.78rem;">{{ t[5][:10] if t[5] else '' }}</td>
                 <td>
-                  <form method="post" action="/admin/batches/{{ batch[0] }}/unenroll"
-                    onsubmit="return confirm('Remove {{ t[1] }} from this batch?');" style="display:inline;">
-                    <input type="hidden" name="trainee_id" value="{{ t[0] }}">
-                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Remove</button>
-                  </form>
+                  <div style="font-weight:600;">{{ t[1] }}</div>
+                  <div class="muted text-sm">{{ t[2] }}</div>
+                </td>
+                <td>
+                  <span style="font-weight:600;">${{ '%.2f'|format(t[7] or 0.0) }}</span>
+                </td>
+                <td>
+                  <span style="font-weight:700; color:var(--color-success);">${{ '%.2f'|format(t[8] or 0.0) }}</span>
+                </td>
+                <td>
+                  {% if t[9] == 'paid' %}
+                  <span class="badge badge-success">Paid</span>
+                  {% elif t[9] == 'partially_paid' %}
+                  <span class="badge badge-warning">Partial</span>
+                  {% else %}
+                  <span class="badge badge-neutral">Unpaid</span>
+                  {% endif %}
+                </td>
+                <td class="muted" style="font-size:0.78rem;">{{ t[5][:10] if t[5] else '—' }}</td>
+                <td style="text-align:right;">
+                  <div class="flex gap-1" style="justify-content:flex-end;">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                      onclick="openPaymentModal({{ t[6] }}, '{{ t[1]|e }}', '{{ t[2]|e }}', {{ t[7] or 0.0 }}, {{ t[8] or 0.0 }}, '{{ t[9] or 'unpaid' }}', '{{ (t[10] or '')|e }}')">
+                      Payment
+                    </button>
+                    <form method="post" action="/admin/batches/{{ batch[0] }}/unenroll"
+                      onsubmit="return confirm('Remove {{ t[1] }} from this batch?');" style="display:inline;">
+                      <input type="hidden" name="trainee_id" value="{{ t[0] }}">
+                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--color-error);">Remove</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
               {% endfor %}
@@ -145,6 +186,7 @@
         {% else %}
         <div class="empty-state" style="padding:40px;">
           <div class="empty-title">No students enrolled</div>
+          <div class="empty-description">Enroll individual students or use Excel import to bulk-enroll.</div>
         </div>
         {% endif %}
       </div>
@@ -214,10 +256,111 @@
             {% endfor %}
           </select>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="enroll-price">Agreed Fee / Price ($)</label>
+            <input id="enroll-price" name="price" type="number" step="0.01" class="form-input" value="{{ batch[15] or batch[16] or 0.0 }}" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="enroll-paid">Initial Amount Paid ($)</label>
+            <input id="enroll-paid" name="amount_paid" type="number" step="0.01" class="form-input" value="0.0" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="enroll-status">Payment Status</label>
+          <select id="enroll-status" name="payment_status" class="form-select">
+            <option value="unpaid">Unpaid</option>
+            <option value="partially_paid">Partially Paid</option>
+            <option value="paid">Paid in Full</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="enroll-notes">Payment / Enrollment Notes</label>
+          <input id="enroll-notes" name="payment_notes" type="text" class="form-input" placeholder="e.g. Scholarship, receipt #123, cash">
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn-primary">Enroll</button>
+        <button type="submit" class="btn btn-primary">Enroll Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Record / Update Payment Modal -->
+<div id="record-payment-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Record Payment</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <form id="payment-form" method="post" action="">
+      <input type="hidden" name="batch_id" value="{{ batch[0] }}">
+      <div class="modal-body">
+        <div style="background:var(--color-surface); padding:10px 14px; border-radius:8px; border:1px solid var(--color-border); margin-bottom:14px;">
+          <div style="font-size:0.8rem; color:var(--color-text-muted);">Student</div>
+          <div id="payment-student-name" style="font-weight:700; color:var(--color-text);"></div>
+          <div id="payment-student-email" class="muted text-sm"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="pay-price">Total Fee / Price ($) *</label>
+            <input id="pay-price" name="price" type="number" step="0.01" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="pay-paid">Amount Paid ($) *</label>
+            <input id="pay-paid" name="amount_paid" type="number" step="0.01" class="form-input" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pay-status">Payment Status</label>
+          <select id="pay-status" name="payment_status" class="form-select">
+            <option value="unpaid">Unpaid</option>
+            <option value="partially_paid">Partially Paid</option>
+            <option value="paid">Paid in Full</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pay-notes">Payment Details &amp; Notes</label>
+          <textarea id="pay-notes" name="payment_notes" class="form-input" rows="2" placeholder="e.g. Paid 500 EGP via Vodafone Cash on Oct 2; receipt ref: #8821"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Import Students Excel Modal -->
+<div id="import-excel-modal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Import Students via Excel</h2>
+      <button class="modal-close" data-modal-close>✕</button>
+    </div>
+    <form method="post" action="/admin/batches/{{ batch[0] }}/import" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div style="background:var(--color-primary-subtle); padding:12px 16px; border-radius:8px; margin-bottom:16px;">
+          <div style="font-weight:600; color:var(--color-primary); font-size:0.9rem;">Excel Sheet Instructions:</div>
+          <p style="font-size:0.83rem; margin:4px 0 10px 0; color:var(--color-text);">
+            Upload a spreadsheet with trainee emails to automatically register them into this batch.
+          </p>
+          <a href="/admin/batches/{{ batch[0] }}/import-template" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Pre-formatted Excel Template (.xlsx)
+          </a>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="excel-file">Select Excel File (.xlsx) *</label>
+          <input id="excel-file" name="file" type="file" accept=".xlsx, .xls" class="form-input" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Upload &amp; Enroll</button>
       </div>
     </form>
   </div>
@@ -289,4 +432,17 @@
     </form>
   </div>
 </div>
+
+<script>
+function openPaymentModal(enrollmentId, name, email, price, paid, status, notes) {
+  document.getElementById('payment-form').action = '/admin/enrollments/' + enrollmentId + '/payment';
+  document.getElementById('payment-student-name').textContent = name;
+  document.getElementById('payment-student-email').textContent = email;
+  document.getElementById('pay-price').value = price;
+  document.getElementById('pay-paid').value = paid;
+  document.getElementById('pay-status').value = status || 'unpaid';
+  document.getElementById('pay-notes').value = notes || '';
+  openModal('record-payment-modal');
+}
+</script>
 {% endblock %}

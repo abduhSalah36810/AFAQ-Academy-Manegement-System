@@ -799,7 +799,9 @@ table.data-table {
   transition: opacity var(--transition-slow);
 }
 
-.modal-overlay.open {
+.modal-overlay.open,
+.modal-overlay.is-open,
+.modal-overlay.active {
   opacity: 1;
   pointer-events: all;
 }
@@ -816,7 +818,9 @@ table.data-table {
   transition: transform var(--transition-slow);
 }
 
-.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+.modal-overlay.open .modal,
+.modal-overlay.is-open .modal,
+.modal-overlay.active .modal { transform: scale(1) translateY(0); }
 
 .modal-header {
   padding: var(--space-6);

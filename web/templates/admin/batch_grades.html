@@ -6,7 +6,11 @@
   <div class="page-header page-header-row">
     <div>
       <div class="breadcrumb-nav">
+        {% if user.role == "admin" %}
         <a href="/admin/batches/{{ batch[0] }}">{{ batch[2] }}</a>
+        {% else %}
+        <a href="/instructor/batches">{{ batch[2] }}</a>
+        {% endif %}
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         <span>Grades</span>
       </div>
@@ -14,9 +18,9 @@
       <p class="page-subtitle">{{ components|length }} component{{ 's' if components|length != 1 else '' }} · Total weight: {{ total_weight }}%</p>
     </div>
     <div class="flex gap-2">
-      <a href="/admin/batches/{{ batch[0] }}/export-grades" class="btn btn-secondary">
+      <a href="{{ '/admin' if user.role == 'admin' else '/instructor' }}/batches/{{ batch[0] }}/export-grades" class="btn btn-secondary">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        Export Excel
+        Export Excel (.xlsx)
       </a>
     </div>
   </div>
@@ -31,7 +35,7 @@
       <div class="empty-state">
         <div class="empty-title">No grading components</div>
         <div class="empty-description">
-          Add grading components from the <a href="/admin/batches/{{ batch[0] }}">batch page</a> first.
+          Add grading components from the <a href="{{ '/admin' if user.role == 'admin' else '/instructor' }}/batches/{{ batch[0] }}">batch page</a> first.
         </div>
       </div>
     </div>
@@ -46,7 +50,7 @@
   </div>
   {% else %}
 
-  <form method="post" action="/admin/batches/{{ batch[0] }}/grades/save">
+  <form method="post" action="{{ '/admin' if user.role == 'admin' else '/instructor' }}/batches/{{ batch[0] }}/grades/save">
     <div class="card">
       <div class="card-body" style="padding:0;overflow-x:auto;">
         <table class="table">

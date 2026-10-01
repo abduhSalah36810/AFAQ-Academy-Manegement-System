@@ -80,6 +80,36 @@
     </div>
   </div>
 
+  {% if enrollment %}
+  <!-- Tuition & Payment Status Banner -->
+  <div class="card" style="margin-bottom:24px; border-left: 4px solid {{ 'var(--color-success)' if enrollment[7] == 'paid' else ('var(--color-warning)' if enrollment[7] == 'partially_paid' else 'var(--color-text-muted)') }};">
+    <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; padding:16px 20px;">
+      <div>
+        <div style="font-size:0.85rem; color:var(--color-text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Tuition &amp; Payment Status</div>
+        <div style="display:flex; align-items:baseline; gap:12px; margin-top:4px; flex-wrap:wrap;">
+          <span style="font-size:1.3rem; font-weight:700;">Paid: ${{ '%.2f'|format(enrollment[6] or 0.0) }}</span>
+          <span class="muted text-sm">of ${{ '%.2f'|format(enrollment[5] or 0.0) }} Total Fee</span>
+          {% if enrollment[5] and enrollment[5] > (enrollment[6] or 0) %}
+          <span style="color:var(--color-warning); font-size:0.85rem; font-weight:600;">(Remaining: ${{ '%.2f'|format(enrollment[5] - (enrollment[6] or 0)) }})</span>
+          {% endif %}
+        </div>
+        {% if enrollment[8] %}
+        <div class="muted text-sm" style="margin-top:4px;"><strong>Note:</strong> {{ enrollment[8] }}</div>
+        {% endif %}
+      </div>
+      <div>
+        {% if enrollment[7] == 'paid' %}
+        <span class="badge badge-success" style="font-size:0.88rem; padding:6px 14px;">Paid in Full ✓</span>
+        {% elif enrollment[7] == 'partially_paid' %}
+        <span class="badge badge-warning" style="font-size:0.88rem; padding:6px 14px;">Partially Paid</span>
+        {% else %}
+        <span class="badge badge-neutral" style="font-size:0.88rem; padding:6px 14px;">Payment Pending</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div style="display:flex; flex-direction:column; gap:28px;">
     <!-- 1. GRADES BREAKDOWN -->
     <div class="card">
@@ -357,8 +387,7 @@ function openSubmitModal(taskId, taskName, prevUrl, prevText) {
   document.getElementById('submit-task-name').textContent = taskName;
   document.getElementById('submission-url').value = prevUrl || '';
   document.getElementById('submission-text').value = prevText || '';
-  const modal = document.getElementById('submit-task-modal');
-  modal.classList.add('active');
+  openModal('submit-task-modal');
 }
 </script>
 {% endblock %}

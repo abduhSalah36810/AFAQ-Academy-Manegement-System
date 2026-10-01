@@ -131,7 +131,7 @@ class BatchService:
                    b.capacity, b.start_date, b.end_date,
                    b.registration_open_date, b.registration_close_date,
                    b.registration_cutoff_sessions, b.status, b.notes, b.created_at,
-                   c.name AS course_name
+                   c.name AS course_name, b.price, c.price AS course_price
             FROM batches b
             LEFT JOIN users u ON b.instructor_id = u.id
             LEFT JOIN courses c ON b.course_id = c.id

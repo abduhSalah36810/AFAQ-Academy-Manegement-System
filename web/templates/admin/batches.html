@@ -242,7 +242,7 @@ function editBatch(id, name, instructorId, capacity, startDate, endDate, status,
     const sel = document.getElementById('edit-batch-instructor');
     for (let opt of sel.options) opt.selected = (opt.value == instructorId);
   }
-  document.getElementById('edit-batch-modal').classList.add('is-open');
+  openModal('edit-batch-modal');
 }
 </script>
 {% endblock %}

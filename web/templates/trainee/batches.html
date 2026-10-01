@@ -60,6 +60,25 @@
           <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">
             Enrolled: {{ b[8][:10] if b[8] else '—' }}
           </div>
+
+          <!-- Tuition & Payment Status -->
+          <div style="font-size:0.78rem; margin-top:8px; padding:6px 10px; background:var(--color-surface); border-radius:6px; border:1px solid var(--color-border); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span class="muted">Fee: </span>
+              <strong>${{ '%.2f'|format(b[10] or 0.0) }}</strong>
+              <span class="muted" style="margin-left:6px;">Paid: </span>
+              <strong style="color:var(--color-success);">${{ '%.2f'|format(b[11] or 0.0) }}</strong>
+            </div>
+            <div>
+              {% if b[12] == 'paid' %}
+              <span class="badge badge-success" style="font-size:0.72rem;">Paid</span>
+              {% elif b[12] == 'partially_paid' %}
+              <span class="badge badge-warning" style="font-size:0.72rem;">Partial</span>
+              {% else %}
+              <span class="badge badge-neutral" style="font-size:0.72rem;">Unpaid</span>
+              {% endif %}
+            </div>
+          </div>
         </div>
 
         <div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--color-border);">

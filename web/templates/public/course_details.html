@@ -222,8 +222,7 @@ function openRequestModal(batchId, batchName, courseName) {
   form.action = '/trainee/batches/' + batchId + '/request';
   document.getElementById('modal-course-name').textContent = courseName;
   document.getElementById('modal-batch-name').textContent = 'Batch: ' + batchName;
-  const modal = document.getElementById('request-enroll-modal');
-  modal.classList.add('active');
+  openModal('request-enroll-modal');
 }
 </script>
 {% endblock %}
