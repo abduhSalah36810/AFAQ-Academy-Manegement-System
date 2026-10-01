@@ -167,6 +167,11 @@ async def public_home(request: Request):
             gallery=gallery,
             testimonials=testimonials,
         )
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"Error in public_home: {tb}")
+        return HTMLResponse(f"<html><body><h2>Error in public_home:</h2><pre>{tb}</pre></body></html>", status_code=500)
     finally:
         conn.close()
 
