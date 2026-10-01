@@ -54,9 +54,32 @@ from services import excel_service
 from services.public_service import PublicService
 
 # ── App setup ───────────────────────────────────────────────────────────────
-create_tables()
+try:
+    create_tables()
+except Exception as e:
+    print(f"Warning: create_tables skipped on boot: {e}")
 
 app = FastAPI(title="AFAQ Academy")
+
+
+@app.get("/api/health")
+async def health_check():
+    info = {
+        "status": "ok",
+        "vercel": bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")),
+    }
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM courses")
+        count = cursor.fetchone()[0]
+        info["database"] = "connected"
+        info["courses_count"] = count
+        conn.close()
+    except Exception as e:
+        info["database"] = "error"
+        info["db_error"] = str(e)
+    return info
 
 # Session middleware (signed cookie; keep the secret in env for production)
 SECRET_KEY = os.environ.get("AFAQ_SECRET_KEY", "afaq-academy-secret-key-change-in-production")

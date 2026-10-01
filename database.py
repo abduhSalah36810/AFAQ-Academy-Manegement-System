@@ -10,6 +10,13 @@ except ImportError:
     pass
 
 
+DEFAULT_TURSO_URL = "libsql://afaq-abduh38.aws-eu-west-1.turso.io"
+DEFAULT_TURSO_TOKEN = (
+    "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9."
+    "eyJhIjoicnciLCJpYXQiOjE3OTA4ODM2MzEsImlkIjoiMDFhMGY4ZmItMTIwMS03ZjNjLWEzMGQtMjU5OTcxYTU3YWI5Iiwia2lkIjoiWFVZelBGdWRyaHY4RXFoZEZJemw1c3lXOWVRUHZqTkVTVXBBWVlxNXF4VSIsInJpZCI6IjlmNDhlYzcyLWJhNTAtNDBlZS1iYWYyLWIyODg2Mjc1MDA0OSJ9."
+    "vHzJVfk84RCI39Ab8dl2htIAm3i6u3qJA7EQXsOK6__dOYnRZPVf_h8amqTjDJU8lmORqfN34INSJmK0zaF3AQ"
+)
+
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE_NAME = "afaq.db"
 
@@ -28,28 +35,34 @@ def get_db_path() -> str:
 
 
 def get_connection():
-    # If Turso Cloud database is configured in .env / environment, use it
-    turso_url = os.environ.get("TURSO_DATABASE_URL")
-    turso_token = os.environ.get("TURSO_AUTH_TOKEN")
+    # If explicitly running tests with local test SQLite
+    if os.environ.get("SQLITE_DB_PATH"):
+        connection = sqlite3.connect(os.environ["SQLITE_DB_PATH"])
+        connection.execute("PRAGMA foreign_keys = ON")
+        return connection
+
+    # If Turso Cloud database is configured in .env / environment or default fallback, use it
+    turso_url = os.environ.get("TURSO_DATABASE_URL") or DEFAULT_TURSO_URL
+    turso_token = os.environ.get("TURSO_AUTH_TOKEN") or DEFAULT_TURSO_TOKEN
 
     if turso_url and turso_token:
         # Strip all whitespace, newlines, and surrounding quotes that can cause InvalidHeaderValue
         turso_url = turso_url.strip().strip("'\"").strip()
         turso_token = turso_token.strip().strip("'\"").strip()
 
-        import libsql
-        connection = libsql.connect(turso_url, auth_token=turso_token)
         try:
-            connection.execute("PRAGMA foreign_keys = ON")
-        except Exception:
-            pass
-        return connection
+            import libsql
+            connection = libsql.connect(turso_url, auth_token=turso_token)
+            try:
+                connection.execute("PRAGMA foreign_keys = ON")
+            except Exception:
+                pass
+            return connection
+        except Exception as e:
+            print(f"Warning: Turso connection failed, falling back to local SQLite: {e}")
 
     connection = sqlite3.connect(get_db_path())
-
-    # Enable foreign key enforcement in SQLite.
     connection.execute("PRAGMA foreign_keys = ON")
-
     return connection
 
 
