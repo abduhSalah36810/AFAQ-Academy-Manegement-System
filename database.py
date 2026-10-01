@@ -1,11 +1,29 @@
+import os
+import shutil
 import sqlite3
+from pathlib import Path
 
 
+BASE_DIR = Path(__file__).resolve().parent
 DATABASE_NAME = "afaq.db"
 
 
+def get_db_path() -> str:
+    # On Vercel / serverless environments, the root directory is read-only.
+    # Writable SQLite operations require using /tmp.
+    if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        tmp_db = Path("/tmp") / DATABASE_NAME
+        base_db = BASE_DIR / DATABASE_NAME
+        if not tmp_db.exists():
+            if base_db.exists():
+                shutil.copy2(base_db, tmp_db)
+        return str(tmp_db)
+
+    return str(BASE_DIR / DATABASE_NAME)
+
+
 def get_connection():
-    connection = sqlite3.connect(DATABASE_NAME)
+    connection = sqlite3.connect(get_db_path())
 
     # Enable foreign key enforcement in SQLite.
     connection.execute("PRAGMA foreign_keys = ON")

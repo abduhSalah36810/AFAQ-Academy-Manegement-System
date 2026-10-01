@@ -6,6 +6,7 @@ from utils.validation import (
     normalize_email,
     is_valid_email,
     is_valid_password,
+    check_password_strength,
     validate_name
 )
 
@@ -37,8 +38,9 @@ def create_admin():
         connection.close()
         return
 
-    if not is_valid_password(password):
-        print("Password must be at least 8 characters.")
+    ok, msg = check_password_strength(password)
+    if not ok:
+        print(f"Invalid password: {msg}")
         connection.close()
         return
 
@@ -66,10 +68,9 @@ def create_admin():
 
         print("\nAdmin account created successfully.")
 
-    except Exception:
+    except Exception as e:
         connection.rollback()
-        print("\nCould not create admin.")
-        print("The email may already exist.")
+        print(f"\nCould not create admin. Database error: {e}")
 
     finally:
         connection.close()
