@@ -3,14 +3,19 @@ import shutil
 import sqlite3
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+except ImportError:
+    pass
+
 
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE_NAME = "afaq.db"
 
 
 def get_db_path() -> str:
-    # On Vercel / serverless environments, the root directory is read-only.
-    # Writable SQLite operations require using /tmp.
+    # On Vercel / serverless environments without Turso, fallback to /tmp.
     if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
         tmp_db = Path("/tmp") / DATABASE_NAME
         base_db = BASE_DIR / DATABASE_NAME
@@ -23,6 +28,16 @@ def get_db_path() -> str:
 
 
 def get_connection():
+    # If Turso Cloud database is configured in .env / environment, use it
+    turso_url = os.environ.get("TURSO_DATABASE_URL")
+    turso_token = os.environ.get("TURSO_AUTH_TOKEN")
+
+    if turso_url and turso_token:
+        import libsql
+        connection = libsql.connect(turso_url, auth_token=turso_token)
+        connection.execute("PRAGMA foreign_keys = ON")
+        return connection
+
     connection = sqlite3.connect(get_db_path())
 
     # Enable foreign key enforcement in SQLite.

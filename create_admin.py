@@ -27,20 +27,28 @@ def create_admin():
     password = getpass.getpass(
         "Admin password: "
     )
+    confirm_password = getpass.getpass(
+        "Confirm password: "
+    )
+
+    if password != confirm_password:
+        print("\nError: Passwords do not match.")
+        connection.close()
+        return
 
     if not validate_name(name):
-        print("Name must contain at least 2 characters.")
+        print("\nError: Name must contain at least 2 characters.")
         connection.close()
         return
 
     if not is_valid_email(email):
-        print("Invalid email.")
+        print("\nError: Invalid email format.")
         connection.close()
         return
 
     ok, msg = check_password_strength(password)
     if not ok:
-        print(f"Invalid password: {msg}")
+        print(f"\nError: Invalid password - {msg}")
         connection.close()
         return
 
@@ -66,7 +74,7 @@ def create_admin():
 
         connection.commit()
 
-        print("\nAdmin account created successfully.")
+        print(f"\nAdmin account '{email}' created successfully.")
 
     except Exception as e:
         connection.rollback()
