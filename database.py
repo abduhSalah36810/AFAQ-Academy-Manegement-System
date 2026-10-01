@@ -33,9 +33,16 @@ def get_connection():
     turso_token = os.environ.get("TURSO_AUTH_TOKEN")
 
     if turso_url and turso_token:
+        # Strip all whitespace, newlines, and surrounding quotes that can cause InvalidHeaderValue
+        turso_url = turso_url.strip().strip("'\"").strip()
+        turso_token = turso_token.strip().strip("'\"").strip()
+
         import libsql
         connection = libsql.connect(turso_url, auth_token=turso_token)
-        connection.execute("PRAGMA foreign_keys = ON")
+        try:
+            connection.execute("PRAGMA foreign_keys = ON")
+        except Exception:
+            pass
         return connection
 
     connection = sqlite3.connect(get_db_path())
