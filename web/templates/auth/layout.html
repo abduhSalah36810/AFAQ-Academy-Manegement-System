@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="/static/css/auth.css" />
+{% endblock %}
+
+{% block body %}
+<div class="auth-page" dir="rtl">
+  <main class="auth-layout">
+    <div class="auth-brand" aria-label="أكاديمية آفاق">
+      <img src="/static/favicon.svg" alt="" width="46" height="46" />
+      <span>أكاديمية آفاق</span>
+    </div>
+    <section class="auth-card" aria-labelledby="auth-title">
+      {% block auth_content %}{% endblock %}
+    </section>
+  </main>
+</div>
+{% endblock %}
