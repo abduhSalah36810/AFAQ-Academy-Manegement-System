@@ -1,969 +1,156 @@
 {% extends "public/layout.html" %}
-{% block title %}{{ org_settings.org_name or "AFAQ Academy" }} — Transform Your Tech Career{% endblock %}
-
-{% block public_head %}
-<style>
-/* ── HOMEPAGE SECTIONS STYLING ────────────────────────────────────────────── */
-.section {
-  padding: 80px 24px;
-  max-width: 1240px;
-  margin: 0 auto;
-}
-
-.section-header {
-  text-align: center;
-  max-width: 720px;
-  margin: 0 auto 52px;
-}
-
-.section-badge {
-  display: inline-block;
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--color-primary);
-  background: var(--color-primary-bg);
-  border-radius: var(--radius-full);
-  margin-bottom: 14px;
-}
-
-.section-title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  color: var(--color-text);
-  line-height: 1.25;
-  letter-spacing: -0.5px;
-}
-
-.section-subtitle {
-  font-size: 1.05rem;
-  color: var(--color-text-muted);
-  line-height: 1.6;
-  margin-top: 12px;
-}
-
-/* 1. HERO SECTION */
-.hero {
-  padding: 100px 24px 80px;
-  max-width: 1240px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  align-items: center;
-  gap: 60px;
-}
-
-.hero-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: #f1f5f9;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  margin-bottom: 20px;
-}
-
-.hero-tag span {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  background: var(--color-success);
-  border-radius: 50%;
-}
-
-.hero-title {
-  font-size: 3.2rem;
-  font-weight: 800;
-  color: var(--color-text);
-  line-height: 1.15;
-  letter-spacing: -1px;
-}
-
-.hero-title span {
-  background: linear-gradient(135deg, var(--color-primary), #7c3aed);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hero-description {
-  font-size: 1.15rem;
-  color: var(--color-text-muted);
-  line-height: 1.65;
-  margin: 24px 0 36px;
-}
-
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.hero-btn-primary {
-  padding: 14px 28px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  background: var(--color-primary);
-  color: #ffffff;
-  text-decoration: none;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-  transition: all var(--transition);
-}
-
-.hero-btn-primary:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-2px);
-  text-decoration: none;
-}
-
-.hero-btn-secondary {
-  padding: 14px 28px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  text-decoration: none;
-  transition: all var(--transition);
-}
-
-.hero-btn-secondary:hover {
-  background: #f1f5f9;
-  text-decoration: none;
-}
-
-.hero-visual {
-  position: relative;
-}
-
-.hero-card-preview {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
-}
-
-/* 2. STATS BAR */
-.stats-bar-wrapper {
-  background: #ffffff;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-  padding: 40px 24px;
-}
-
-.stats-bar {
-  max-width: 1240px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
-  text-align: center;
-}
-
-.stat-item-number {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--color-primary);
-  letter-spacing: -0.5px;
-}
-
-.stat-item-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  margin-top: 4px;
-}
-
-/* 3. ABOUT SECTION */
-.about-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
-  align-items: center;
-}
-
-.feature-pill-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin-top: 24px;
-}
-
-.feature-pill {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-}
-
-.feature-pill-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* 4. PUBLIC COURSE CARDS */
-.public-course-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 28px;
-}
-
-.pub-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  overflow: hidden;
-  transition: all var(--transition);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.pub-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.07);
-}
-
-.pub-card-top {
-  padding: 24px;
-}
-
-.pub-card-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: 6px;
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-  margin-bottom: 12px;
-}
-
-.pub-card-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-  line-height: 1.35;
-}
-
-.pub-card-desc {
-  font-size: 0.88rem;
-  color: var(--color-text-muted);
-  line-height: 1.55;
-  margin: 10px 0 18px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.pub-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border);
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
-}
-
-.pub-card-footer {
-  padding: 16px 24px;
-  background: #f8fafc;
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* 5. UPCOMING BATCHES */
-.batches-table-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-/* 6. ALUMNI / GRADUATES */
-.graduates-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
-}
-
-.graduate-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 24px;
-  text-align: center;
-  transition: transform var(--transition);
-}
-
-.graduate-card:hover {
-  transform: translateY(-3px);
-}
-
-.graduate-avatar {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  margin: 0 auto 14px;
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: 700;
-  overflow: hidden;
-}
-
-.graduate-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* 7. GALLERY */
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.gallery-card {
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  position: relative;
-  aspect-ratio: 4 / 3;
-}
-
-.gallery-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.gallery-card:hover img {
-  transform: scale(1.05);
-}
-
-.gallery-card-caption {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 12px 16px;
-  background: linear-gradient(transparent, rgba(15, 23, 42, 0.85));
-  color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 500;
-}
-
-/* 8. TESTIMONIALS */
-.testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
-}
-
-.testimonial-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.testimonial-quote {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--color-text);
-  font-style: italic;
-  margin-bottom: 20px;
-}
-
-.testimonial-stars {
-  color: #f59e0b;
-  margin-bottom: 12px;
-  font-size: 1rem;
-}
-
-/* 9. CONTACT SECTION */
-.contact-container {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 48px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  padding: 48px;
-}
-
-@media (max-width: 900px) {
-  .hero { grid-template-columns: 1fr; text-align: center; padding: 60px 24px; }
-  .hero-actions { justify-content: center; }
-  .about-grid { grid-template-columns: 1fr; }
-  .stats-bar { grid-template-columns: 1fr 1fr; }
-  .contact-container { grid-template-columns: 1fr; padding: 28px; }
-}
-
-@media (max-width: 600px) {
-  .hero-title { font-size: 2.2rem; }
-  .stats-bar { grid-template-columns: 1fr; }
-  .section { padding: 50px 16px; }
-}
-</style>
-{% endblock %}
+{% block title %}{{ org_settings.org_name }} — {{ org_settings.tagline }}{% endblock %}
 
 {% block content %}
-
-<!-- 1. HERO SECTION -->
-<section class="hero">
-  <div>
-    <div class="hero-tag">
-      <span></span> Verified Practical Tech Cohorts
-    </div>
-    <h1 class="hero-title">
-      {{ org_settings.hero_headline or "Transform Your Tech Career with Structured, Mentor-Led Programs" }}
-    </h1>
-    <p class="hero-description">
-      {{ org_settings.hero_subheadline or "Join elite cohorts, build real projects, and master in-demand technologies with direct guidance from experienced industry instructors." }}
-    </p>
+<section class="hero public-section" aria-labelledby="hero-title">
+  <div class="hero-copy">
+    <p class="eyebrow">{{ org_settings.org_name }}</p>
+    <h1 id="hero-title">{{ org_settings.hero_headline }}</h1>
+    <p class="hero-description">{{ org_settings.hero_subheadline }}</p>
     <div class="hero-actions">
-      <a href="#courses" class="hero-btn-primary">Explore Available Courses</a>
-      <a href="/signup" class="hero-btn-secondary">Join AFAQ / Sign Up</a>
+      <a href="#courses" class="btn btn-primary btn-lg">استكشف الدورات</a>
+      <a href="#contact" class="btn btn-secondary btn-lg">تواصل معنا</a>
     </div>
   </div>
-
-  <div class="hero-visual">
-    <div class="hero-card-preview">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <span class="badge badge-success">Active Cohorts</span>
-        <span style="font-size:0.8rem; color:var(--color-text-muted);">AFAQ Verified LMS</span>
-      </div>
-      <div style="font-size:1.15rem; font-weight:700; margin-bottom:8px;">Structured Cohort Learning</div>
-      <p style="color:var(--color-text-muted); font-size:0.88rem; line-height:1.5; margin-bottom:20px;">
-        Every course is split into clear chapters, milestone assignments, live session attendance tracking, and transparent weighted evaluations.
-      </p>
-      <div style="background:var(--color-bg); padding:16px; border-radius:12px; border:1px solid var(--color-border); display:flex; justify-content:space-around;">
-        <div style="text-align:center;">
-          <div style="font-weight:700; color:var(--color-primary); font-size:1.1rem;">{{ stats.active_courses }}</div>
-          <div style="font-size:0.75rem; color:var(--color-text-muted);">Programs</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-weight:700; color:var(--color-primary); font-size:1.1rem;">{{ stats.total_batches }}</div>
-          <div style="font-size:0.75rem; color:var(--color-text-muted);">Cohorts</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-weight:700; color:var(--color-primary); font-size:1.1rem;">100%</div>
-          <div style="font-size:0.75rem; color:var(--color-text-muted);">Hands-On</div>
-        </div>
-      </div>
-    </div>
+  <div class="hero-note" aria-label="ملامح تجربة التعلم">
+    <span class="hero-note-mark" aria-hidden="true">آ</span>
+    <p>مسار واضح، وممارسة تطبيقية، وتعلّم يتقدم معك خطوة بخطوة.</p>
   </div>
 </section>
 
-<!-- 2. REAL DATABASE STATISTICS BAR -->
-<div class="stats-bar-wrapper">
-  <div class="stats-bar">
-    <div>
-      <div class="stat-item-number">{{ stats.active_courses }}</div>
-      <div class="stat-item-label">Active Academic Programs</div>
-    </div>
-    <div>
-      <div class="stat-item-number">{{ stats.total_batches }}</div>
-      <div class="stat-item-label">Training Batches & Cohorts</div>
-    </div>
-    <div>
-      <div class="stat-item-number">{{ stats.total_students }}</div>
-      <div class="stat-item-label">Enrolled Trainees</div>
-    </div>
-    <div>
-      <div class="stat-item-number">{{ stats.instructors_count }}</div>
-      <div class="stat-item-label">Expert Mentors & Faculty</div>
-    </div>
+<section id="about" class="public-section about-section">
+  <div class="section-heading">
+    <p class="eyebrow">من نحن</p><h2>تعلم له مسار واضح</h2>
   </div>
-</div>
-
-<!-- 3. ABOUT AFAQ SECTION -->
-<section id="about" class="section">
   <div class="about-grid">
-    <div>
-      <span class="section-badge">About The Academy</span>
-      <h2 class="section-title">Bridging Theory and High-Performance Engineering</h2>
-      <p class="section-subtitle" style="text-align:left; margin-bottom:24px;">
-        {{ org_settings.about_text }}
-      </p>
-      <p style="color:var(--color-text-muted); line-height:1.65;">
-        {{ org_settings.approach_text }}
-      </p>
-
-      <div class="feature-pill-list">
-        <div class="feature-pill">
-          <div class="feature-pill-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:700;">Cohort-Based Milestones</div>
-            <div style="font-size:0.85rem; color:var(--color-text-muted); margin-top:2px;">Learn with peers in capped batches under direct supervision from experienced developers.</div>
-          </div>
-        </div>
-
-        <div class="feature-pill">
-          <div class="feature-pill-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:700;">Evaluated Code Submissions</div>
-            <div style="font-size:0.85rem; color:var(--color-text-muted); margin-top:2px;">Every chapter assignment is reviewed with actionable feedback, scores, and bonus points for excellence.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div style="background:var(--color-surface); border:1px solid var(--color-border); border-radius:20px; padding:32px; box-shadow:0 10px 30px rgba(0,0,0,0.04);">
-        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:16px;">How Students Progress at AFAQ</h3>
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div style="display:flex; gap:12px;">
-            <div style="width:28px; height:28px; border-radius:50%; background:var(--color-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0;">1</div>
-            <div>
-              <div style="font-weight:600; font-size:0.92rem;">Explore & Request Batch Enrollment</div>
-              <div style="font-size:0.82rem; color:var(--color-text-muted);">Choose an active batch before registration cutoff. Seats are strictly capacity-controlled.</div>
-            </div>
-          </div>
-
-          <div style="display:flex; gap:12px;">
-            <div style="width:28px; height:28px; border-radius:50%; background:var(--color-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0;">2</div>
-            <div>
-              <div style="font-weight:600; font-size:0.92rem;">Attend Live Interactive Sessions</div>
-              <div style="font-size:0.82rem; color:var(--color-text-muted);">Engage in scheduled sessions with real-time attendance tracking and instructor mentoring.</div>
-            </div>
-          </div>
-
-          <div style="display:flex; gap:12px;">
-            <div style="width:28px; height:28px; border-radius:50%; background:var(--color-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0;">3</div>
-            <div>
-              <div style="font-weight:600; font-size:0.92rem;">Complete Chapter Tasks & Projects</div>
-              <div style="font-size:0.82rem; color:var(--color-text-muted);">Submit repositories and project links directly in your personal trainee portal.</div>
-            </div>
-          </div>
-
-          <div style="display:flex; gap:12px;">
-            <div style="width:28px; height:28px; border-radius:50%; background:var(--color-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0;">4</div>
-            <div>
-              <div style="font-weight:600; font-size:0.92rem;">Earn Weighted Grades & Certification</div>
-              <div style="font-size:0.82rem; color:var(--color-text-muted);">Track components, bonuses, and milestones dynamically throughout your cohort.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <p class="about-lead">{{ org_settings.about_text }}</p>
+    <div class="about-copy"><p>{{ org_settings.approach_text }}</p><a href="#courses" class="text-link">تعرّف على الدورات <span aria-hidden="true">←</span></a></div>
   </div>
 </section>
 
-<!-- 4. COURSES WE OFFER -->
-<section id="courses" class="section" style="background:#f8fafc; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border);">
-  <div class="section-header">
-    <span class="section-badge">Academic Curriculum</span>
-    <h2 class="section-title">Courses We Offer</h2>
-    <p class="section-subtitle">Real-world training programs developed to deliver practical industry skills</p>
-  </div>
-
+<section id="courses" class="public-section section-tinted">
+  <div class="section-heading"><p class="eyebrow">المسارات التعليمية</p><h2>الدورات المتاحة</h2><p>اختر المسار الذي يناسب اهتمامك، واطّلع على تفاصيله ومحتواه.</p></div>
   {% if courses %}
-  <div class="public-course-grid">
+  <div class="course-grid">
     {% for c in courses %}
-    <div class="pub-card">
-      <div class="pub-card-top">
-        <span class="pub-card-badge">{{ c.category }}</span>
-        <h3 class="pub-card-title">{{ c.name }}</h3>
-        <p class="pub-card-desc">{{ c.description or "Comprehensive training course focused on foundational concepts and applied practical engineering." }}</p>
-
-        <div class="pub-meta-row">
-          <span>Level: <strong>{{ c.level }}</strong></span>
-          <span>Language: <strong>{{ c.language }}</strong></span>
-        </div>
-        <div class="pub-meta-row" style="border:none; padding-top:6px;">
-          <span>Chapters: <strong>{{ c.chapter_count }}</strong></span>
-          <span>Open Batches: <strong>{{ c.open_batches_count }}</strong></span>
-        </div>
+    <article class="course-card">
+      {% if c.image_url %}<img class="course-image" src="{{ c.image_url }}" alt="{{ c.name }}" width="720" height="405" loading="lazy">{% endif %}
+      <div class="course-content">
+        {% if c.category %}<p class="card-kicker">{{ c.category }}</p>{% endif %}
+        <h3>{{ c.name }}</h3>
+        {% if c.description %}<p class="course-description">{{ c.description|striptags|truncate(190) }}</p>{% endif %}
+        <ul class="course-facts">
+          {% if c.level %}<li><span>المستوى</span><strong>{{ c.level }}</strong></li>{% endif %}
+          {% if c.total_sessions %}<li><span>الجلسات</span><strong>{{ c.total_sessions }}</strong></li>{% endif %}
+          {% if c.instructor_name %}<li><span>المدرب</span><strong>{{ c.instructor_name }}</strong></li>{% endif %}
+          {% if c.open_batches_count %}<li><span>دفعات متاحة</span><strong>{{ c.open_batches_count }}</strong></li>{% endif %}
+        </ul>
       </div>
-
-      <div class="pub-card-footer">
-        <div>
-          {% if c.price is not none %}
-          <span style="font-weight:800; font-size:1.15rem; color:var(--color-text);">${{ c.price }}</span>
-          {% else %}
-          <span style="font-size:0.82rem; color:var(--color-text-muted);">Cohort Program</span>
-          {% endif %}
-        </div>
-        <a href="/courses/{{ c.id }}" class="btn btn-primary btn-sm">Explore Course</a>
+      <div class="course-footer">
+        {% if c.price is not none %}<span class="course-price">الرسوم: <bdi>{{ c.price }}</bdi></span>{% else %}<span class="muted">تفاصيل الدورة</span>{% endif %}
+        <a href="/courses/{{ c.id }}" class="btn btn-primary btn-sm">تفاصيل الدورة</a>
       </div>
-    </div>
+    </article>
     {% endfor %}
   </div>
-  {% else %}
-  <div class="card" style="text-align:center; padding:48px;">
-    <p class="muted">New academic courses will be published shortly.</p>
-  </div>
-  {% endif %}
+  {% else %}<p class="empty-state">لا توجد دورات منشورة حاليًا. يُرجى زيارتنا لاحقًا.</p>{% endif %}
 </section>
 
-<!-- 5. UPCOMING BATCHES -->
-<section id="upcoming" class="section">
-  <div class="section-header">
-    <span class="section-badge">Enrollment Open</span>
-    <h2 class="section-title">Upcoming & Active Cohorts</h2>
-    <p class="section-subtitle">Reserve your seat in upcoming batches. Registration closes once capacity is reached.</p>
-  </div>
-
-  {% if upcoming_batches %}
-  <div class="public-course-grid">
+{% if upcoming_batches %}
+<section id="upcoming" class="public-section">
+  <div class="section-heading"><p class="eyebrow">مواعيد التدريب</p><h2>الدفعات الحالية والقادمة</h2><p>معلومات الدفعات المنشورة ومواعيدها وحالة التسجيل.</p></div>
+  <div class="batch-grid">
     {% for b in upcoming_batches %}
-    <div class="pub-card">
-      <div class="pub-card-top">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <span class="badge {{ 'badge-success' if b.is_open else 'badge-neutral' }}">
-            {{ 'Registration Open' if b.is_open else 'Registration Closed' }}
-          </span>
-          <span style="font-size:0.75rem; color:var(--color-text-muted); font-weight:600;">
-            {{ b.enrolled_count }} / {{ b.capacity if b.capacity > 0 else '∞' }} Enrolled
-          </span>
-        </div>
-
-        <div style="font-size:0.8rem; font-weight:700; color:var(--color-primary); text-transform:uppercase; letter-spacing:0.5px;">
-          {{ b.course_name }}
-        </div>
-        <h3 class="pub-card-title" style="margin-top:2px;">{{ b.name }}</h3>
-
-        <div style="margin-top:14px; font-size:0.82rem; color:var(--color-text-muted); display:flex; flex-direction:column; gap:6px;">
-          <div>Starts: <strong>{{ b.start_date }}</strong></div>
-          <div>Mentor: <strong>{{ b.instructor_name }}</strong></div>
-        </div>
-      </div>
-
-      <div class="pub-card-footer">
-        {% if b.is_open %}
-        <a href="/courses/{{ b.course_id }}" class="btn btn-primary btn-sm btn-full" style="justify-content:center;">
-          Request to Join
-        </a>
-        {% else %}
-        <button disabled class="btn btn-ghost btn-sm btn-full" style="justify-content:center; opacity:0.6;">
-          Batch Full
-        </button>
-        {% endif %}
-      </div>
-    </div>
+    <article class="batch-card">
+      <div class="batch-card-top"><span class="status-badge {{ 'status-open' if b.is_open else 'status-closed' }}">{{ b.display_status }}</span><span class="batch-date" dir="ltr">{{ b.start_date or '—' }}</span></div>
+      <h3>{{ b.course_name }}</h3><p class="batch-name">{{ b.name }}</p>
+      {% if b.end_date %}<p class="batch-meta">تنتهي في <bdi>{{ b.end_date }}</bdi></p>{% endif %}
+      {% if b.instructor_name %}<p class="batch-meta">المدرب: {{ b.instructor_name }}</p>{% endif %}
+      <a class="text-link" href="/courses/{{ b.course_id }}#batches">تفاصيل الدورة <span aria-hidden="true">←</span></a>
+    </article>
     {% endfor %}
   </div>
-  {% else %}
-  <div class="card" style="text-align:center; padding:48px;">
-    <p class="muted">No upcoming batches currently open for enrollment. Check back soon!</p>
-  </div>
-  {% endif %}
 </section>
+{% endif %}
 
-<!-- 6. COMPLETED COURSES -->
 {% if completed_batches %}
-<section id="completed" class="section" style="background:#f8fafc; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border);">
-  <div class="section-header">
-    <span class="section-badge">Proven Track Record</span>
-    <h2 class="section-title">Completed Cohorts</h2>
-    <p class="section-subtitle">Batches that have successfully completed their curriculum and milestones</p>
-  </div>
-
-  <div class="public-course-grid">
-    {% for cb in completed_batches %}
-    <div class="pub-card" style="background:var(--color-surface);">
-      <div class="pub-card-top">
-        <span class="badge badge-info" style="margin-bottom:8px;">Completed</span>
-        <div style="font-size:0.8rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase;">
-          {{ cb.course_name }}
-        </div>
-        <h3 class="pub-card-title" style="margin-top:2px;">{{ cb.batch_name }}</h3>
-        <div style="font-size:0.82rem; color:var(--color-text-muted); margin-top:12px;">
-          Instructor: <strong>{{ cb.instructor_name }}</strong>
-        </div>
-        <div style="font-size:0.82rem; color:var(--color-text-muted); margin-top:4px;">
-          Completed: <strong>{{ cb.end_date }}</strong>
-        </div>
-      </div>
-      <div class="pub-card-footer">
-        <span style="font-size:0.85rem; color:var(--color-text-muted);">
-          Verified Graduates: <strong>{{ cb.graduates_count }}</strong>
-        </span>
-      </div>
-    </div>
-    {% endfor %}
+<section id="completed" class="public-section section-tinted">
+  <div class="section-heading"><p class="eyebrow">من أرشيف الأكاديمية</p><h2>دفعات أتمّت مسارها</h2><p>نماذج من الدفعات التي انتهت وفق البيانات المنشورة.</p></div>
+  <div class="batch-grid completed-grid">
+    {% for b in completed_batches %}<article class="batch-card completed-card"><p class="card-kicker">دفعة مكتملة</p><h3>{{ b.course_name }}</h3><p class="batch-name">{{ b.batch_name }}</p>
+      {% if b.start_date or b.end_date %}<p class="batch-meta">{% if b.start_date %}<bdi>{{ b.start_date }}</bdi>{% endif %}{% if b.start_date and b.end_date %} — {% endif %}{% if b.end_date %}<bdi>{{ b.end_date }}</bdi>{% endif %}</p>{% endif %}
+      {% if b.instructor_name %}<p class="batch-meta">المدرب: {{ b.instructor_name }}</p>{% endif %}</article>{% endfor %}
   </div>
 </section>
 {% endif %}
 
-<!-- 7. GRADUATES / ALUMNI SHOWCASE -->
-{% if graduates %}
-<section id="graduates" class="section">
-  <div class="section-header">
-    <span class="section-badge">Success Stories</span>
-    <h2 class="section-title">Alumni & Graduates</h2>
-    <p class="section-subtitle">Meet the talented graduates who built and launched with AFAQ Academy</p>
-  </div>
-
-  <div class="graduates-grid">
-    {% for g in graduates %}
-    <div class="graduate-card">
-      <div class="graduate-avatar">
-        {% if g.profile_image_url %}
-        <img src="{{ g.profile_image_url }}" alt="{{ g.name }}">
-        {% else %}
-        {{ g.name[0].upper() }}
-        {% endif %}
-      </div>
-      <div style="font-weight:700; font-size:1rem; color:var(--color-text);">{{ g.name }}</div>
-      <div style="font-size:0.8rem; color:var(--color-primary); font-weight:600; margin-top:2px;">
-        {{ g.course_name or "Academy Graduate" }}
-      </div>
-      <p style="font-size:0.82rem; color:var(--color-text-muted); line-height:1.5; margin-top:10px;">
-        "{{ g.bio }}"
-      </p>
-    </div>
-    {% endfor %}
+<section id="experience" class="public-section learning-section">
+  <div class="section-heading"><p class="eyebrow">طريقة التعلم</p><h2>معرفة منظمة وتطبيق عملي</h2><p>{{ org_settings.approach_text }}</p></div>
+  <div class="learning-steps">
+    <article><span>١</span><h3>محتوى متدرج</h3><p>فصول مرتبة تساعد على بناء المعرفة خطوة بعد أخرى.</p></article>
+    <article><span>٢</span><h3>مهام تطبيقية</h3><p>تدعم المهام العملية تحويل المفاهيم إلى ممارسة.</p></article>
+    <article><span>٣</span><h3>جلسات ومتابعة</h3><p>جلسات تدريبية وتقييمات ضمن تجربة التعلم في المنصة.</p></article>
   </div>
 </section>
-{% endif %}
 
-<!-- 8. GALLERY SECTION -->
 {% if gallery_items %}
-<section id="gallery" class="section" style="background:#f8fafc; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border);">
-  <div class="section-header">
-    <span class="section-badge">Campus & Community</span>
-    <h2 class="section-title">Academy Gallery</h2>
-    <p class="section-subtitle">Moments from our graduation ceremonies, workshops, and cohort sessions</p>
-  </div>
-
+<section id="gallery" class="public-section section-tinted">
+  <div class="section-heading"><p class="eyebrow">من الأكاديمية</p><h2>معرض الصور</h2><p>لحظات وأنشطة من محتوى الأكاديمية المنشور.</p></div>
   <div class="gallery-grid">
     {% for item in gallery_items %}
-    <div class="gallery-card">
-      <img src="{{ item.image_url }}" alt="{{ item.title }}" loading="lazy">
-      <div class="gallery-card-caption">
-        <div style="font-weight:700;">{{ item.title }}</div>
-        {% if item.caption %}
-        <div style="font-size:0.75rem; opacity:0.9;">{{ item.caption }}</div>
-        {% endif %}
-      </div>
-    </div>
+    <figure class="gallery-card">
+      <button class="gallery-preview" type="button" data-gallery-open data-image="{{ item.image_url }}" data-caption="{{ item.caption or item.title }}" aria-label="عرض صورة: {{ item.title }}">
+        <img src="{{ item.image_url }}" alt="{{ item.title }}{% if item.caption %} — {{ item.caption }}{% endif %}" width="720" height="540" loading="lazy">
+      </button>
+      <figcaption><strong>{{ item.title }}</strong>{% if item.caption %}<span>{{ item.caption }}</span>{% endif %}{% if item.category %}<small>{{ item.category }}</small>{% endif %}</figcaption>
+    </figure>
     {% endfor %}
   </div>
 </section>
+<dialog class="gallery-lightbox" id="gallery-lightbox" aria-label="معاينة الصورة">
+  <button type="button" class="lightbox-close" data-gallery-close aria-label="إغلاق المعاينة">×</button>
+  <img src="" alt="" id="gallery-lightbox-image">
+  <p id="gallery-lightbox-caption"></p>
+</dialog>
 {% endif %}
 
-<!-- 9. WHY AFAQ LEARNING EXPERIENCE -->
-<section id="experience" class="section">
-  <div class="section-header">
-    <span class="section-badge">The Learning Model</span>
-    <h2 class="section-title">Why AFAQ Academy?</h2>
-    <p class="section-subtitle">A structured educational ecosystem engineered around student accountability and tangible progress</p>
-  </div>
-
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:24px;">
-    <div class="card" style="padding:28px;">
-      <div style="width:44px; height:44px; border-radius:10px; background:var(--color-primary-bg); color:var(--color-primary); display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-      </div>
-      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:8px;">Chapter-Based Curriculum</h3>
-      <p class="muted" style="font-size:0.88rem; line-height:1.55;">
-        Courses follow progressive chapters. Each chapter introduces target concepts followed by real project requirements.
-      </p>
-    </div>
-
-    <div class="card" style="padding:28px;">
-      <div style="width:44px; height:44px; border-radius:10px; background:rgba(16,185,129,0.12); color:var(--color-success); display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      </div>
-      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:8px;">Transparent Grading System</h3>
-      <p class="muted" style="font-size:0.88rem; line-height:1.55;">
-        Component-based weighted scores ensure students know exactly where they stand across exams, projects, and bonuses.
-      </p>
-    </div>
-
-    <div class="card" style="padding:28px;">
-      <div style="width:44px; height:44px; border-radius:10px; background:rgba(245,158,11,0.12); color:var(--color-warning); display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      </div>
-      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:8px;">Session Attendance Discipline</h3>
-      <p class="muted" style="font-size:0.88rem; line-height:1.55;">
-        Every live session is tracked with real-time status (present, late, excused, absent) to guarantee active participation.
-      </p>
-    </div>
-  </div>
+{% if graduates %}
+<section id="graduates" class="public-section">
+  <div class="section-heading"><p class="eyebrow">قصص من مجتمعنا</p><h2>خريجو الأكاديمية</h2></div>
+  <div class="graduate-grid">{% for g in graduates %}<article class="graduate-card">
+    {% if g.profile_image_url %}<img src="{{ g.profile_image_url }}" alt="صورة {{ g.name }}" width="72" height="72" loading="lazy">{% else %}<span class="graduate-initial" aria-hidden="true">{{ g.name[0] }}</span>{% endif %}
+    <h3>{{ g.name }}</h3>{% if g.course_name %}<p>{{ g.course_name }}</p>{% endif %}{% if g.bio %}<blockquote>{{ g.bio }}</blockquote>{% endif %}
+  </article>{% endfor %}</div>
 </section>
+{% endif %}
 
-<!-- 10. TESTIMONIALS -->
 {% if testimonials %}
-<section id="testimonials" class="section" style="background:#f8fafc; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border);">
-  <div class="section-header">
-    <span class="section-badge">Student Feedback</span>
-    <h2 class="section-title">What Our Learners Say</h2>
-    <p class="section-subtitle">Real experiences from students who transformed their careers through our cohorts</p>
-  </div>
-
-  <div class="testimonials-grid">
-    {% for t in testimonials %}
-    <div class="testimonial-card">
-      <div>
-        <div class="testimonial-stars">
-          {% for _ in range(t.rating) %}&#9733;{% endfor %}
-        </div>
-        <div class="testimonial-quote">"{{ t.content }}"</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:12px; border-top:1px solid var(--color-border); padding-top:14px;">
-        <div style="width:40px; height:40px; border-radius:50%; background:var(--color-primary-bg); color:var(--color-primary); display:flex; align-items:center; justify-content:center; font-weight:700;">
-          {{ t.student_name[0].upper() }}
-        </div>
-        <div>
-          <div style="font-weight:700; font-size:0.9rem;">{{ t.student_name }}</div>
-          <div style="font-size:0.75rem; color:var(--color-text-muted);">{{ t.role_or_course }}</div>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
+<section id="testimonials" class="public-section section-tinted">
+  <div class="section-heading"><p class="eyebrow">آراء منشورة</p><h2>تجارب المتدربين</h2></div>
+  <div class="testimonial-grid">{% for t in testimonials %}<article class="testimonial-card"><blockquote>{{ t.content }}</blockquote><div class="testimonial-author"><strong>{{ t.student_name }}</strong>{% if t.role_or_course %}<span>{{ t.role_or_course }}</span>{% endif %}</div></article>{% endfor %}</div>
 </section>
 {% endif %}
 
-<!-- 11. CONTACT US SECTION -->
-<section id="contact" class="section">
-  <div class="section-header">
-    <span class="section-badge">Get In Touch</span>
-    <h2 class="section-title">Contact AFAQ Academy</h2>
-    <p class="section-subtitle">Have questions about upcoming cohorts, prerequisites, or enrollment? Reach out to our admissions team.</p>
-  </div>
-
-  <div class="contact-container">
-    <div>
-      <h3 style="font-size:1.4rem; font-weight:800; margin-bottom:12px;">Let's Talk</h3>
-      <p style="color:var(--color-text-muted); line-height:1.6; margin-bottom:28px;">
-        Our admissions and academic advisors are available to guide you through course selection, cohort scheduling, and prerequisites.
-      </p>
-
-      <div style="display:flex; flex-direction:column; gap:18px;">
-        <div style="display:flex; align-items:flex-start; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:8px; background:var(--color-primary-bg); color:var(--color-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:600; font-size:0.88rem;">Email Address</div>
-            <div style="font-size:0.85rem; color:var(--color-text-muted);">{{ org_settings.email }}</div>
-          </div>
-        </div>
-
-        <div style="display:flex; align-items:flex-start; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:8px; background:var(--color-primary-bg); color:var(--color-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:600; font-size:0.88rem;">Phone / WhatsApp</div>
-            <div style="font-size:0.85rem; color:var(--color-text-muted);">{{ org_settings.phone }}</div>
-          </div>
-        </div>
-
-        {% if org_settings.address %}
-        <div style="display:flex; align-items:flex-start; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:8px; background:var(--color-primary-bg); color:var(--color-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:600; font-size:0.88rem;">Campus Location</div>
-            <div style="font-size:0.85rem; color:var(--color-text-muted);">{{ org_settings.address }}</div>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if org_settings.working_hours %}
-        <div style="display:flex; align-items:flex-start; gap:14px;">
-          <div style="width:36px; height:36px; border-radius:8px; background:var(--color-primary-bg); color:var(--color-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </div>
-          <div>
-            <div style="font-weight:600; font-size:0.88rem;">Admissions Office Hours</div>
-            <div style="font-size:0.85rem; color:var(--color-text-muted);">{{ org_settings.working_hours }}</div>
-          </div>
-        </div>
-        {% endif %}
-      </div>
+<section id="contact" class="public-section contact-section">
+  <div class="section-heading"><p class="eyebrow">تواصل معنا</p><h2>يسعدنا استقبال استفسارك</h2><p>أرسل رسالتك عبر النموذج، وستُسجّل لدى الأكاديمية لمتابعتها.</p></div>
+  {% set has_contact_details = org_settings.email or org_settings.phone or org_settings.whatsapp_href or org_settings.address or org_settings.working_hours or org_settings.social_links %}
+  <div class="contact-grid{% if not has_contact_details %} contact-grid--form-only{% endif %}">
+    <div class="contact-details">
+      {% if org_settings.email %}<p><span>البريد الإلكتروني</span><a href="{{ org_settings.email_href }}" dir="ltr">{{ org_settings.email }}</a></p>{% endif %}
+      {% if org_settings.phone %}<p><span>الهاتف</span><a href="{{ org_settings.phone_href }}" dir="ltr">{{ org_settings.phone }}</a></p>{% endif %}
+      {% if org_settings.whatsapp_href %}<p><span>واتساب</span><a href="{{ org_settings.whatsapp_href }}" target="_blank" rel="noopener noreferrer" dir="ltr">{{ org_settings.whatsapp }}</a></p>{% endif %}
+      {% if org_settings.address %}<p><span>العنوان</span><bdi>{{ org_settings.address }}</bdi></p>{% endif %}
+      {% if org_settings.working_hours %}<p><span>ساعات العمل</span>{{ org_settings.working_hours }}</p>{% endif %}
+      {% for social in org_settings.social_links %}<p><span>{{ social.label }}</span><a href="{{ social.url }}" target="_blank" rel="noopener noreferrer">زيارة الحساب</a></p>{% endfor %}
     </div>
-
-    <!-- Contact Form -->
-    <div>
-      {% if contact_success %}
-      <div class="alert alert-success" style="margin-bottom:20px;">
-        {{ contact_success }}
-      </div>
-      {% endif %}
-      {% if contact_error %}
-      <div class="alert alert-error" style="margin-bottom:20px;">
-        {{ contact_error }}
-      </div>
-      {% endif %}
-
-      <form method="post" action="/contact#contact">
-        <div class="form-group">
-          <label class="form-label" for="contact-name">Full Name *</label>
-          <input id="contact-name" name="name" type="text" class="form-input" placeholder="e.g. Sarah Ahmed" required minlength="2" />
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-          <div class="form-group">
-            <label class="form-label" for="contact-email">Email Address *</label>
-            <input id="contact-email" name="email" type="email" class="form-input" placeholder="sarah@example.com" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="contact-phone">Phone (optional)</label>
-            <input id="contact-phone" name="phone" type="tel" class="form-input" placeholder="+20 1..." />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="contact-subject">Inquiry Subject *</label>
-          <input id="contact-subject" name="subject" type="text" class="form-input" placeholder="e.g. Next Batch Enrollment Question" required minlength="3" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="contact-message">Message *</label>
-          <textarea id="contact-message" name="message" class="form-input" rows="4" placeholder="How can we assist you with your academic goals?" required minlength="10"></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-full" style="padding:12px; font-weight:600;">
-          Send Message
-        </button>
-      </form>
-    </div>
+    <form class="contact-form" method="post" action="/contact#contact">
+      {% if contact_success %}<div class="alert alert-success" role="status">{{ contact_success }}</div>{% endif %}{% if contact_error %}<div class="alert alert-error" role="alert">{{ contact_error }}</div>{% endif %}
+      <label for="contact-name">الاسم الكامل <span aria-hidden="true">*</span></label><input id="contact-name" name="name" type="text" required minlength="2" maxlength="100" autocomplete="name">
+      <div class="contact-form-row"><div><label for="contact-email">البريد الإلكتروني <span aria-hidden="true">*</span></label><input id="contact-email" name="email" type="email" required autocomplete="email" dir="ltr"></div><div><label for="contact-phone">رقم الهاتف</label><input id="contact-phone" name="phone" type="tel" autocomplete="tel" dir="ltr"></div></div>
+      <label for="contact-subject">موضوع الرسالة <span aria-hidden="true">*</span></label><input id="contact-subject" name="subject" type="text" required minlength="3" maxlength="200">
+      <label for="contact-message">رسالتك <span aria-hidden="true">*</span></label><textarea id="contact-message" name="message" rows="5" required minlength="10" maxlength="5000"></textarea>
+      <button class="btn btn-primary" type="submit">إرسال الاستفسار</button>
+    </form>
   </div>
 </section>
-
 {% endblock %}

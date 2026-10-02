@@ -12,6 +12,8 @@ Privacy Guarantees:
 """
 
 from datetime import date
+import re
+from urllib.parse import unquote, urlsplit
 
 
 class PublicService:
@@ -70,6 +72,80 @@ class PublicService:
             "hero_headline": row[13] or "",
             "hero_subheadline": row[14] or "",
         }
+
+    def get_public_org_settings(self) -> dict:
+        """Return configured organization content after suppressing seeded placeholders."""
+        settings = self.get_org_settings()
+        defaults = {
+            "email": "contact@afaq-academy.com",
+            "phone": "+20 100 000 0000",
+            "whatsapp": "+20 100 000 0000",
+            "address": "Cairo, Egypt",
+            "working_hours": "Sunday - Thursday: 9:00 AM - 6:00 PM",
+        }
+        for field, default in defaults.items():
+            if (settings.get(field) or "").strip().casefold() == default.casefold():
+                settings[field] = ""
+
+        email = settings.get("email", "").strip()
+        settings["email"] = email if re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email) else ""
+        settings["email_href"] = f"mailto:{settings['email']}" if settings["email"] else ""
+
+        for field in ("phone", "whatsapp"):
+            value = settings.get(field, "").strip()
+            digits = re.sub(r"\D", "", value)
+            if (not value or not re.fullmatch(r"[+()0-9 .-]+", value)
+                    or len(digits) < 7 or len(digits) > 15):
+                settings[field] = ""
+                settings[f"{field}_href"] = ""
+            elif field == "whatsapp":
+                settings[f"{field}_href"] = f"https://wa.me/{digits}" if value.startswith(("+", "00")) else ""
+                if not settings[f"{field}_href"]:
+                    settings[field] = ""
+            else:
+                settings[f"{field}_href"] = f"tel:{value}"
+
+        social_links = []
+        for field, label in (("facebook_url", "فيسبوك"), ("instagram_url", "إنستغرام"),
+                             ("linkedin_url", "لينكدإن"), ("youtube_url", "يوتيوب")):
+            value = settings.get(field, "").strip()
+            try:
+                parsed = urlsplit(value)
+                valid = parsed.scheme in ("https", "http") and bool(parsed.hostname)
+            except ValueError:
+                valid = False
+            settings[field] = value if valid else ""
+            if valid:
+                social_links.append({"label": label, "url": value})
+        settings["social_links"] = social_links
+
+        # Avoid presenting seeded English marketing copy as approved Arabic content.
+        for field in ("tagline", "about_text", "approach_text", "hero_headline", "hero_subheadline"):
+            value = settings.get(field, "").strip()
+            if value and not any("\u0600" <= char <= "\u06ff" for char in value):
+                settings[field] = ""
+        settings["tagline"] = settings["tagline"] or "تعلم منظّم وممارسة عملية في التقنية"
+        settings["hero_headline"] = settings["hero_headline"] or "خطوتك القادمة في عالم التقنية تبدأ من هنا"
+        settings["hero_subheadline"] = settings["hero_subheadline"] or "مسارات تعليمية تجمع بين المحتوى المنظم والمهام التطبيقية والجلسات التدريبية."
+        settings["about_text"] = settings["about_text"] or "في أكاديمية آفاق، نرتب التعلم في فصول متتابعة ونربط المفاهيم بمهام تطبيقية تساعد المتدرب على التقدم خطوة بخطوة."
+        settings["approach_text"] = settings["approach_text"] or "يتقدم المتدرب عبر محتوى منظم ومهام عملية وجلسات تدريبية، مع متابعة التقييمات ضمن المنصة."
+        settings["org_name"] = settings.get("org_name") or "أكاديمية آفاق"
+        return settings
+
+    @staticmethod
+    def _public_image_url(value: str | None) -> str:
+        value = (value or "").strip()
+        decoded_path = unquote(value.split("?", 1)[0])
+        if (value.startswith("/static/") and ".." not in decoded_path
+                and "\\" not in decoded_path):
+            return value
+        try:
+            parsed = urlsplit(value)
+            if parsed.scheme in ("https", "http") and parsed.hostname:
+                return value
+        except ValueError:
+            pass
+        return ""
 
     def update_org_settings(self, **kwargs):
         allowed = {
@@ -157,7 +233,10 @@ class PublicService:
                    (SELECT COUNT(*) FROM batches b
                     WHERE b.course_id = c.id
                     AND b.status IN ('upcoming', 'active')
-                    AND b.is_public = 1) AS open_batches_count
+                    AND b.is_public = 1
+                    AND ((b.status = 'upcoming' AND (b.start_date IS NULL OR b.start_date = '' OR date(b.start_date) >= date('now')))
+                      OR (b.status = 'active' AND (b.start_date IS NULL OR b.start_date = '' OR date(b.start_date) <= date('now'))
+                                              AND (b.end_date IS NULL OR b.end_date = '' OR date(b.end_date) >= date('now'))))) AS open_batches_count
             FROM courses c
             LEFT JOIN users u ON c.instructor_id = u.id
             WHERE c.active = 1 AND c.is_public = 1
@@ -170,13 +249,13 @@ class PublicService:
                 "id": r[0],
                 "name": r[1],
                 "description": r[2] or "",
-                "image_url": r[3] or "",
-                "category": r[4] or "Tech & Programming",
-                "level": r[5] or "Beginner",
-                "language": r[6] or "Arabic",
+                "image_url": self._public_image_url(r[3]),
+                "category": r[4] or "",
+                "level": r[5] or "",
+                "language": r[6] or "",
                 "total_sessions": r[7] or 0,
                 "price": r[8] if r[9] == 1 else None,
-                "instructor_name": r[10] or "AFAQ Faculty",
+                "instructor_name": r[10] or "",
                 "chapter_count": r[11] or 0,
                 "open_batches_count": r[12] or 0,
             })
@@ -230,6 +309,9 @@ class PublicService:
             WHERE b.course_id = ?
             AND b.status IN ('upcoming', 'active')
             AND b.is_public = 1
+            AND ((b.status = 'upcoming' AND (b.start_date IS NULL OR b.start_date = '' OR date(b.start_date) >= date('now')))
+              OR (b.status = 'active' AND (b.start_date IS NULL OR b.start_date = '' OR date(b.start_date) <= date('now'))
+                                      AND (b.end_date IS NULL OR b.end_date = '' OR date(b.end_date) >= date('now'))))
             ORDER BY b.start_date ASC
         """, (course_id,))
         batches = []
@@ -243,21 +325,18 @@ class PublicService:
             close_reason = None
             if capacity > 0 and enrolled >= capacity:
                 is_open = False
-                close_reason = "Capacity full"
+                close_reason = "اكتمل العدد المتاح"
             elif cutoff > 0 and completed_s >= cutoff:
                 is_open = False
-                close_reason = "Registration closed (session cutoff reached)"
+                close_reason = "أُغلق التسجيل لبدء الجلسات"
 
             batches.append({
                 "id": b[0],
                 "name": b[1],
-                "capacity": capacity,
-                "enrolled_count": enrolled,
-                "start_date": b[3] or "TBA",
-                "end_date": b[4] or "TBA",
+                "start_date": b[3] or "لم يُحدد بعد",
+                "end_date": b[4] or "",
                 "status": b[5],
-                "notes": b[7] or "",
-                "instructor_name": b[8] or c[11] or "Instructor Assigned",
+                "instructor_name": b[8] or c[11] or "",
                 "is_open": is_open,
                 "close_reason": close_reason,
             })
@@ -266,14 +345,14 @@ class PublicService:
             "id": c[0],
             "name": c[1],
             "description": c[2] or "",
-            "image_url": c[3] or "",
-            "category": c[4] or "Technology",
-            "level": c[5] or "Beginner",
-            "language": c[6] or "Arabic",
+            "image_url": self._public_image_url(c[3]),
+            "category": c[4] or "",
+            "level": c[5] or "",
+            "language": c[6] or "",
             "total_sessions": c[7] or 0,
             "price": c[8] if c[9] == 1 else None,
-            "prerequisites": c[10] or "No prior prerequisites required.",
-            "instructor_name": c[11] or "AFAQ Faculty",
+            "prerequisites": c[10] or "",
+            "instructor_name": c[11] or "",
             "chapters": chapters,
             "batches": batches,
         }
@@ -299,7 +378,10 @@ class PublicService:
             LEFT JOIN users u ON b.instructor_id = u.id
             WHERE b.status IN ('upcoming', 'active')
             AND b.is_public = 1
-            AND c.active = 1
+            AND c.active = 1 AND c.is_public = 1
+            AND ((b.status = 'upcoming' AND (b.start_date IS NULL OR b.start_date = '' OR date(b.start_date) >= date('now')))
+              OR (b.status = 'active' AND (b.start_date IS NULL OR b.start_date = '' OR date(b.start_date) <= date('now'))
+                                      AND (b.end_date IS NULL OR b.end_date = '' OR date(b.end_date) >= date('now'))))
             ORDER BY b.start_date ASC
             LIMIT ?
         """, (limit,))
@@ -321,15 +403,13 @@ class PublicService:
                 "name": b[1],
                 "course_id": b[2],
                 "course_name": b[3],
-                "course_image_url": b[4] or "",
-                "capacity": capacity,
-                "enrolled_count": enrolled,
-                "start_date": b[6] or "Upcoming",
-                "end_date": b[7] or "TBA",
+                "course_image_url": self._public_image_url(b[4]),
+                "start_date": b[6] or "لم يُحدد بعد",
+                "end_date": b[7] or "",
                 "status": b[8],
-                "instructor_name": b[10] or "Faculty Mentor",
+                "instructor_name": b[10] or "",
                 "is_open": is_open,
-                "available_seats": max(0, capacity - enrolled) if capacity > 0 else "Open",
+                "display_status": "جارية" if b[8] == "active" else ("التسجيل مفتوح" if is_open else "التسجيل مغلق"),
             })
         return batches
 
@@ -343,15 +423,14 @@ class PublicService:
             SELECT b.id, b.name, b.course_id, c.name AS course_name,
                    c.image_url AS course_image_url,
                    b.start_date, b.end_date,
-                   u.name AS instructor_name,
-                   (SELECT COUNT(*) FROM batch_enrollments be
-                    WHERE be.batch_id = b.id AND be.status IN ('completed', 'active')) AS graduates_count
+                   u.name AS instructor_name
             FROM batches b
             JOIN courses c ON b.course_id = c.id
             LEFT JOIN users u ON b.instructor_id = u.id
             WHERE (b.status = 'completed' OR (b.end_date IS NOT NULL AND b.end_date != '' AND b.end_date < date('now')))
             AND b.status != 'cancelled'
             AND b.is_public = 1
+            AND c.active = 1 AND c.is_public = 1
             ORDER BY b.end_date DESC
             LIMIT ?
         """, (limit,))
@@ -362,11 +441,10 @@ class PublicService:
                 "batch_name": r[1],
                 "course_id": r[2],
                 "course_name": r[3],
-                "course_image_url": r[4] or "",
+                "course_image_url": self._public_image_url(r[4]),
                 "start_date": r[5] or "",
-                "end_date": r[6] or "Completed",
-                "instructor_name": r[7] or "AFAQ Faculty",
-                "graduates_count": r[8] or 0,
+                "end_date": r[6] or "مكتملة",
+                "instructor_name": r[7] or "",
             })
         return completed
 
@@ -383,24 +461,35 @@ class PublicService:
         cursor = self.connection.cursor()
         cursor.execute("""
             SELECT u.name, u.profile_image_url, u.public_bio, u.graduation_status,
-                   c.name AS course_name, b.name AS batch_name
+                   (SELECT c.name FROM batch_enrollments be
+                    JOIN batches b ON b.id = be.batch_id JOIN courses c ON c.id = b.course_id
+                    WHERE be.trainee_id = u.id AND LOWER(be.status) = 'completed'
+                      AND (b.status = 'completed' OR (b.end_date IS NOT NULL AND b.end_date != '' AND date(b.end_date) < date('now')))
+                      AND b.is_public = 1 AND b.status != 'cancelled' AND c.active = 1 AND c.is_public = 1
+                    ORDER BY COALESCE(b.end_date, '') DESC LIMIT 1) AS course_name,
+                   (SELECT b.name FROM batch_enrollments be
+                    JOIN batches b ON b.id = be.batch_id JOIN courses c ON c.id = b.course_id
+                    WHERE be.trainee_id = u.id AND LOWER(be.status) = 'completed'
+                      AND (b.status = 'completed' OR (b.end_date IS NOT NULL AND b.end_date != '' AND date(b.end_date) < date('now')))
+                      AND b.is_public = 1 AND b.status != 'cancelled' AND c.active = 1 AND c.is_public = 1
+                    ORDER BY COALESCE(b.end_date, '') DESC LIMIT 1) AS batch_name
             FROM users u
-            LEFT JOIN batch_enrollments be ON be.trainee_id = u.id
-            LEFT JOIN batches b ON be.batch_id = b.id
-            LEFT JOIN courses c ON b.course_id = c.id
-            WHERE u.role = 'trainee'
-            AND u.active = 1
-            AND u.show_on_public_profile = 1
-            ORDER BY u.id DESC
-            LIMIT ?
+            WHERE u.role = 'trainee' AND u.active = 1 AND u.show_on_public_profile = 1
+              AND LOWER(COALESCE(u.graduation_status, '')) IN ('graduate', 'graduated', 'alumni', 'completed')
+              AND EXISTS (SELECT 1 FROM batch_enrollments be
+                    JOIN batches b ON b.id = be.batch_id JOIN courses c ON c.id = b.course_id
+                    WHERE be.trainee_id = u.id AND LOWER(be.status) = 'completed'
+                      AND (b.status = 'completed' OR (b.end_date IS NOT NULL AND b.end_date != '' AND date(b.end_date) < date('now')))
+                      AND b.is_public = 1 AND b.status != 'cancelled' AND c.active = 1 AND c.is_public = 1)
+            ORDER BY u.id DESC LIMIT ?
         """, (limit,))
         graduates = []
         for r in cursor.fetchall():
             graduates.append({
                 "name": r[0],
-                "profile_image_url": r[1] or "",
-                "bio": r[2] or "Alumni graduate at AFAQ Academy",
-                "status": r[3] or "Graduate",
+                "profile_image_url": self._public_image_url(r[1]),
+                "bio": r[2] or "",
+                "status": r[3] or "",
                 "course_name": r[4] or "",
                 "batch_name": r[5] or "",
             })
@@ -427,11 +516,15 @@ class PublicService:
         cursor.execute(query, params)
         items = []
         for r in cursor.fetchall():
+            image_url = self._public_image_url(r[2])
+            if not image_url:
+                continue
             items.append({
                 "id": r[0],
                 "title": r[1],
-                "image_url": r[2],
-                "category": r[3],
+                "image_url": image_url,
+                "category": {"Graduation": "التخرج", "Courses": "الدورات", "Events": "الفعاليات",
+                             "Workshops": "ورش العمل", "Activities": "الأنشطة"}.get(r[3], ""),
                 "caption": r[4] or "",
                 "display_order": r[5],
             })
@@ -488,7 +581,7 @@ class PublicService:
         return [{
             "id": r[0],
             "student_name": r[1],
-            "role_or_course": r[2] or "Alumni",
+            "role_or_course": r[2] or "",
             "avatar_url": r[3] or "",
             "content": r[4],
             "rating": r[5],

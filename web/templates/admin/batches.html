@@ -58,7 +58,7 @@
           {% if course[9] %}<span>التصنيف: {{ course[9] }}</span>{% endif %}
         </div>
       </div>
-      <a href="/admin/courses/{{ course[0] }}/edit-details" class="btn btn-ghost btn-sm">تعديل التفاصيل</a>
+      <a href="/admin/courses?edit_course_id={{ course[0] }}" class="btn btn-ghost btn-sm">تعديل التفاصيل</a>
     </div>
   </div>
 
@@ -100,8 +100,7 @@
           </svg>
           إدارة الدفعة
         </a>
-        <button type="button" class="btn btn-ghost btn-sm"
-          onclick="editBatch({{ b[0] }}, '{{ b[2]|e }}', {{ b[4] or 'null' if b[3] else 'null' }}, {{ b[5] }}, '{{ b[6] or '' }}', '{{ b[7] or '' }}', '{{ b[8] }}', {{ b[10] if b[10] else 0 }})">
+        <button type="button" class="btn btn-ghost btn-sm" data-edit-batch="{{ b|tojson|forceescape }}">
           تعديل
         </button>
       </div>
@@ -243,7 +242,8 @@
 </div>
 
 <script>
-function editBatch(id, name, instructorId, capacity, startDate, endDate, status, cutoff) {
+function editBatch(batch) {
+  const [id, , name, instructorId, , capacity, startDate, endDate, status, , cutoff] = batch;
   document.getElementById('edit-batch-form').action = '/admin/batches/' + id + '/edit';
   document.getElementById('edit-batch-name').value = name;
   document.getElementById('edit-batch-capacity').value = capacity;
@@ -252,11 +252,12 @@ function editBatch(id, name, instructorId, capacity, startDate, endDate, status,
   document.getElementById('edit-batch-cutoff').value = cutoff;
   const statusSel = document.getElementById('edit-batch-status');
   for (let opt of statusSel.options) opt.selected = (opt.value === status);
-  if (instructorId) {
-    const sel = document.getElementById('edit-batch-instructor');
-    for (let opt of sel.options) opt.selected = (opt.value == instructorId);
-  }
+  document.getElementById('edit-batch-instructor').value = instructorId || '';
   openModal('edit-batch-modal');
 }
+
+document.querySelectorAll('[data-edit-batch]').forEach(button => {
+  button.addEventListener('click', () => editBatch(JSON.parse(button.dataset.editBatch)));
+});
 </script>
 {% endblock %}

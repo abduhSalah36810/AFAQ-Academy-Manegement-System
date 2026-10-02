@@ -46,6 +46,7 @@ class TestPublicWebsite(unittest.TestCase):
         cls.conn.cursor().execute("INSERT OR REPLACE INTO users (id, name, email, password_hash, role, active) VALUES (2, 'Instructor Jane', 'jane@afaq.instructor.edu', 'hash123', 'instructor', 1)")
         cls.conn.cursor().execute("INSERT OR REPLACE INTO users (id, name, email, password_hash, role, active, show_on_public_profile, public_bio, graduation_status) VALUES (3, 'Trainee Omar', 'omar@afaq.trainee.edu', 'hash123', 'trainee', 1, 1, 'Top graduated engineer', 'Graduate')")
         cls.conn.cursor().execute("INSERT OR REPLACE INTO users (id, name, email, password_hash, role, active, show_on_public_profile) VALUES (4, 'Private Trainee', 'private@afaq.trainee.edu', 'hash123', 'trainee', 1, 0)")
+        cls.conn.cursor().execute("INSERT OR REPLACE INTO users (id, name, email, password_hash, role, active, show_on_public_profile, graduation_status) VALUES (5, 'Unverified Trainee', 'unverified@afaq.trainee.edu', 'hash123', 'trainee', 1, 1, 'Graduate')")
         cls.conn.commit()
 
         # Seed Course & Batches
@@ -91,6 +92,27 @@ class TestPublicWebsite(unittest.TestCase):
             instructor_id=2
         )
         cls.conn.cursor().execute("UPDATE batches SET is_public = 1, status = 'completed' WHERE id = ?", (cls.batch_completed_id,))
+        cls.batch_date_conflict_id = batch_svc.create(
+            course_id=cls.course_id, name="Stale Upcoming Batch", start_date="2026-01-01",
+            end_date="2026-03-01", capacity=10, instructor_id=2,
+        )
+        cls.conn.cursor().execute(
+            "UPDATE batches SET is_public = 1, status = 'upcoming' WHERE id = ?",
+            (cls.batch_date_conflict_id,),
+        )
+        cls.conn.cursor().execute(
+            "INSERT INTO batch_enrollments (batch_id, trainee_id, status) VALUES (?, 3, 'completed')",
+            (cls.batch_completed_id,),
+        )
+        PublicService(cls.conn).add_gallery_item(
+            "لقاء تدريبي", "/static/images/training.jpg", category="Workshops",
+            caption="نشاط تدريبي منشور", is_visible=True,
+        )
+        PublicService(cls.conn).add_gallery_item(
+            "صورة داخلية", "/../secret.txt", category="Workshops", is_visible=True,
+        )
+        cls.private_course_id = course_svc.create(name="Private Course", description="Internal", instructor_id=2)
+        cls.conn.cursor().execute("UPDATE courses SET is_public = 0 WHERE id = ?", (cls.private_course_id,))
         cls.conn.commit()
 
     @classmethod
@@ -106,10 +128,34 @@ class TestPublicWebsite(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.body.decode("utf-8")
         self.assertIn("AFAQ Academy", body)
-        self.assertIn("Explore Available Courses", body)
+        self.assertIn('lang="ar" dir="rtl"', body)
+        self.assertIn("استكشف الدورات", body)
         self.assertIn("Full-Stack Web Development", body)
-        self.assertIn("Log In", body)
-        self.assertIn("Join AFAQ", body)
+        self.assertIn(f"/courses/{self.course_id}", body)
+        self.assertIn("FSW-01 (Fall Cohort)", body)
+        self.assertIn("FSW-00 (Pilot Cohort)", body)
+        self.assertIn("التسجيل مفتوح", body)
+        self.assertIn("لقاء تدريبي", body)
+        self.assertIn("/static/images/training.jpg", body)
+        self.assertNotIn("Evening sessions via hybrid campus", body)
+        self.assertNotIn("Private Course", body)
+        self.assertNotIn("صورة داخلية", body)
+        self.assertNotIn("unverified@afaq.trainee.edu", body)
+        self.assertNotIn("100%", body)
+        self.assertNotIn("Verified Graduates", body)
+        self.assertNotIn('id="testimonials"', body)
+        self.assertNotIn("contact@afaq-academy.com", body)
+        self.assertNotIn("+20 100 000 0000", body)
+        self.assertNotIn("omar@afaq.trainee.edu", body)
+        self.assertNotIn("86.0", body)
+        upcoming = PublicService(self.conn).get_upcoming_batches()
+        self.assertNotIn("Stale Upcoming Batch", [batch["name"] for batch in upcoming])
+        self.assertIn('aria-expanded="false"', body)
+        self.assertIn("public.js", body)
+        self.assertIn('href="/static/favicon.svg"', body)
+        self.assertIn("contact-grid--form-only", body)
+        with open("web/static/css/public.css", encoding="utf-8") as public_css:
+            self.assertIn("prefers-reduced-motion:reduce", public_css.read())
 
     def test_02_privacy_protection_graduates(self):
         """Requirement #7 & #18: Only public students appear; private student data is never leaked."""
@@ -143,8 +189,14 @@ class TestPublicWebsite(unittest.TestCase):
         self.assertIn("Frontend Mastery", body)
         self.assertIn("Backend", body)
         self.assertIn("FSW-01 (Fall Cohort)", body)
-        self.assertIn("Login to Request", body)
+        self.assertIn("سجّل الدخول للطلب", body)
         self.assertIn(f"/login?next=/courses/{self.course_id}", body)
+        self.assertEqual(body.count('aria-current="page">الدورات</a>'), 2)
+        self.assertIn("course-detail-content", body)
+        details = PublicService(self.conn).get_course_details(self.course_id)
+        self.assertNotIn("enrolled_count", details["batches"][0])
+        self.assertNotIn("capacity", details["batches"][0])
+        self.assertNotIn("notes", details["batches"][0])
 
     def test_04_contact_form_submission_and_validation(self):
         """Requirement #14: Contact form submission with server-side validation."""
@@ -170,17 +222,26 @@ class TestPublicWebsite(unittest.TestCase):
         """Requirement #19: Admin can manage content and website settings."""
         pub_svc = PublicService(self.conn)
         pub_svc.update_org_settings(
-            hero_headline="Empowering Future Tech Leaders",
-            about_text="AFAQ Academy is an elite coding academy."
+            hero_headline="خطوة جديدة في التقنية",
+            about_text="AFAQ Academy is an elite coding academy.",
+            email="hello@example.com",
+            phone="+201055512345",
+            whatsapp="+201055512345",
+            facebook_url="https://facebook.com/afaq-academy",
         )
         org = pub_svc.get_org_settings()
-        self.assertEqual(org["hero_headline"], "Empowering Future Tech Leaders")
+        self.assertEqual(org["hero_headline"], "خطوة جديدة في التقنية")
 
         # Homepage reflects dynamic change
         req = make_request("/")
         response = asyncio.run(web_app.public_home(req))
         body = response.body.decode("utf-8")
-        self.assertIn("Empowering Future Tech Leaders", body)
+        self.assertIn("خطوة جديدة في التقنية", body)
+        self.assertIn("mailto:hello@example.com", body)
+        self.assertIn("tel:+201055512345", body)
+        self.assertIn("https://wa.me/201055512345", body)
+        self.assertIn("https://facebook.com/afaq-academy", body)
+        self.assertNotIn("contact-grid--form-only", body)
 
     def test_06_auth_redirect_with_next(self):
         """Requirement #26 & #27: Next parameter preserves user journey to the selected course."""

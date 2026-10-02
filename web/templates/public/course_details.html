@@ -1,228 +1,61 @@
 {% extends "public/layout.html" %}
-{% block title %}{{ course.name }} — {{ org_settings.org_name or "AFAQ Academy" }}{% endblock %}
-
+{% block title %}{{ course.name }} — {{ org_settings.org_name }}{% endblock %}
 {% block meta %}
-<meta name="description" content="{{ (course.description or course.name)|striptags|truncate(160) }}" />
-<meta property="og:title" content="{{ course.name }} — {{ org_settings.org_name or 'AFAQ Academy' }}" />
-<meta property="og:description" content="{{ (course.description or 'Explore course syllabus, modules, and cohort batches at AFAQ Academy.')|striptags|truncate(200) }}" />
-{% if course.image_url %}<meta property="og:image" content="{{ course.image_url }}" />{% endif %}
-<meta property="og:type" content="article" />
+<meta name="description" content="{{ (course.description or course.name)|striptags|truncate(160) }}">
+<meta property="og:title" content="{{ course.name }} — {{ org_settings.org_name }}">
+<meta property="og:description" content="{{ (course.description or course.name)|striptags|truncate(200) }}">
+{% if course.image_url %}<meta property="og:image" content="{{ course.image_url }}">{% endif %}
+<meta property="og:type" content="article">
 {% endblock %}
 
 {% block content %}
-<div style="background:#f8fafc; border-bottom:1px solid var(--color-border); padding:50px 24px 40px;">
-  <div style="max-width:1240px; margin:0 auto;">
-    <div style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--color-text-muted); margin-bottom:16px;">
-      <a href="/" style="color:var(--color-text-muted); text-decoration:none;">Home</a>
-      <span>&rsaquo;</span>
-      <a href="/#courses" style="color:var(--color-text-muted); text-decoration:none;">Courses</a>
-      <span>&rsaquo;</span>
-      <span style="color:var(--color-text); font-weight:600;">{{ course.name }}</span>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1.4fr 0.6fr; gap:48px; align-items:flex-start;">
+<section class="course-detail-hero">
+  <div class="course-detail-inner">
+    <nav class="breadcrumb" aria-label="مسار الصفحة"><a href="/">الرئيسية</a><span aria-hidden="true">/</span><a href="/#courses">الدورات</a><span aria-hidden="true">/</span><span aria-current="page">{{ course.name }}</span></nav>
+    <div class="course-detail-heading">
       <div>
-        <span class="pub-card-badge" style="margin-bottom:12px;">{{ course.category }}</span>
-        <h1 style="font-size:2.5rem; font-weight:800; color:var(--color-text); line-height:1.2; margin-bottom:16px;">
-          {{ course.name }}
-        </h1>
-        <p style="font-size:1.1rem; color:var(--color-text-muted); line-height:1.65; margin-bottom:24px;">
-          {{ course.description or "Comprehensive training curriculum engineered around real-world software development and progressive milestone mastery." }}
-        </p>
-
-        <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:0.9rem; color:var(--color-text);">
-          <div>Level: <strong>{{ course.level }}</strong></div>
-          <div>Language: <strong>{{ course.language }}</strong></div>
-          <div>Total Sessions: <strong>{{ course.total_sessions }}</strong></div>
-          <div>Faculty: <strong>{{ course.instructor_name }}</strong></div>
-        </div>
+        {% if course.category %}<p class="eyebrow">{{ course.category }}</p>{% endif %}
+        <h1>{{ course.name }}</h1>
+        {% if course.description %}<p class="course-detail-description">{{ course.description }}</p>{% endif %}
+        <ul class="detail-facts">
+          {% if course.level %}<li><span>المستوى</span><strong>{{ course.level }}</strong></li>{% endif %}
+          {% if course.language %}<li><span>لغة المحتوى</span><strong>{{ course.language }}</strong></li>{% endif %}
+          {% if course.total_sessions %}<li><span>عدد الجلسات</span><strong>{{ course.total_sessions }}</strong></li>{% endif %}
+          {% if course.instructor_name %}<li><span>المدرب</span><strong>{{ course.instructor_name }}</strong></li>{% endif %}
+        </ul>
       </div>
-
-      <div style="background:var(--color-surface); border:1px solid var(--color-border); border-radius:16px; padding:28px; box-shadow:0 8px 24px rgba(0,0,0,0.04);">
-        <div style="font-size:0.82rem; font-weight:700; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.5px;">Tuition / Pricing</div>
-        <div style="font-size:2rem; font-weight:800; color:var(--color-text); margin:6px 0 16px;">
-          {% if course.price is not none %}
-          ${{ course.price }}
-          {% else %}
-          Cohort Program
-          {% endif %}
-        </div>
-        <a href="#batches" class="btn btn-primary btn-full" style="padding:12px; justify-content:center; font-weight:600;">
-          View Open Batches
-        </a>
-        <div style="font-size:0.8rem; color:var(--color-text-muted); text-align:center; margin-top:10px;">
-          Limited seats per batch for personalized mentoring.
-        </div>
-      </div>
+      <aside class="price-panel">
+        {% if course.price is not none %}<p class="eyebrow">رسوم الدورة</p><strong class="price-value"><bdi>{{ course.price }}</bdi></strong>{% else %}<p class="eyebrow">التسجيل</p><strong class="price-value">عبر الدفعات المتاحة</strong>{% endif %}
+        <a href="#batches" class="btn btn-primary">عرض الدفعات</a>
+      </aside>
     </div>
   </div>
+</section>
+
+<div class="public-section course-detail-content">
+  {% if course.prerequisites %}<section class="detail-block"><p class="eyebrow">قبل البدء</p><h2>المتطلبات السابقة</h2><p>{{ course.prerequisites }}</p></section>{% endif %}
+  <section class="detail-block" aria-labelledby="curriculum-title">
+    <div class="detail-section-heading"><div><p class="eyebrow">محتوى الدورة</p><h2 id="curriculum-title">الفصول التعليمية</h2></div><span class="muted">{{ course.chapters|length }} فصل</span></div>
+    {% if course.chapters %}<ol class="chapter-list">{% for ch in course.chapters %}<li class="chapter-item"><span class="chapter-number">{{ loop.index }}</span><div class="chapter-copy"><h3>{{ ch.title }}</h3>{% if ch.description %}<p>{{ ch.description }}</p>{% endif %}<small>{{ ch.task_count }} مهمة تطبيقية</small></div></li>{% endfor %}</ol>
+    {% else %}<p class="empty-state">سيُعلن عن تفاصيل المحتوى عند توفرها.</p>{% endif %}
+  </section>
+
+  <section id="batches" class="detail-block">
+    <div class="detail-section-heading"><div><p class="eyebrow">مواعيد التدريب</p><h2>الدفعات المتاحة</h2><p>اختر دفعة للاطلاع على موعدها وحالة التسجيل.</p></div></div>
+    {% if course.batches %}<div class="table-responsive"><table class="public-table"><thead><tr><th scope="col">الدفعة</th><th scope="col">المدرب</th><th scope="col">الموعد</th><th scope="col">التسجيل</th><th scope="col">الإجراء</th></tr></thead><tbody>
+      {% for b in course.batches %}<tr><td><strong>{{ b.name }}</strong>{% if b.notes %}<p class="muted">{{ b.notes }}</p>{% endif %}</td><td>{{ b.instructor_name or '—' }}</td><td dir="ltr"><bdi>{{ b.start_date }}</bdi>{% if b.end_date and b.end_date != 'TBA' %} — <bdi>{{ b.end_date }}</bdi>{% endif %}</td><td><span class="status-badge {{ 'status-open' if b.is_open else 'status-closed' }}">{{ 'التسجيل مفتوح' if b.is_open else 'التسجيل مغلق' }}</span></td><td>
+        {% if b.is_open %}{% if user and user.role == 'trainee' %}<button type="button" class="btn btn-primary btn-sm" data-enrollment-request data-batch-id="{{ b.id }}" data-batch-name="{{ b.name }}" data-course-name="{{ course.name }}">طلب الالتحاق</button>{% elif user %}<span class="muted">تسجيل المتدربين فقط</span>{% else %}<a href="/login?next=/courses/{{ course.id }}" class="btn btn-primary btn-sm">سجّل الدخول للطلب</a>{% endif %}{% else %}<span class="muted">{{ b.close_reason or 'التسجيل مغلق' }}</span>{% endif %}
+      </td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="empty-state"><p>لا توجد دفعات منشورة لهذه الدورة حاليًا.</p><a href="/#contact" class="text-link">تواصل معنا للاستفسار</a></div>{% endif %}
+  </section>
 </div>
 
-<div class="section">
-  <!-- Prerequisites & Highlights -->
-  <div style="margin-bottom:48px;">
-    <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:12px;">Course Prerequisites</h2>
-    <p style="color:var(--color-text-muted); line-height:1.6;">{{ course.prerequisites }}</p>
-  </div>
-
-  <!-- Syllabus Chapters -->
-  <div style="margin-bottom:56px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <div>
-        <h2 style="font-size:1.4rem; font-weight:800; margin:0;">Curriculum & Chapters</h2>
-        <p class="muted" style="margin-top:4px;">Structured modules and practical projects covered in this course</p>
-      </div>
-      <span class="badge badge-neutral" style="font-size:0.85rem;">{{ course.chapters|length }} Chapters</span>
-    </div>
-
-    {% if course.chapters %}
-    <div style="display:flex; flex-direction:column; gap:16px;">
-      {% for ch in course.chapters %}
-      <div style="background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; padding:20px 24px; display:flex; justify-content:space-between; align-items:flex-start; gap:20px;">
-        <div style="display:flex; gap:16px; align-items:flex-start;">
-          <div style="width:36px; height:36px; border-radius:8px; background:var(--color-primary-bg); color:var(--color-primary); display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">
-            {{ loop.index }}
-          </div>
-          <div>
-            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 6px 0;">{{ ch.title }}</h3>
-            {% if ch.description %}
-            <p style="font-size:0.88rem; color:var(--color-text-muted); margin:0; line-height:1.5;">{{ ch.description }}</p>
-            {% endif %}
-          </div>
-        </div>
-        <span class="badge badge-neutral" style="flex-shrink:0;">{{ ch.task_count }} Milestone Task{{ 's' if ch.task_count != 1 else '' }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="card" style="padding:32px; text-align:center;">
-      <p class="muted">Detailed syllabus chapters will be published soon.</p>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- Available / Upcoming Batches Table -->
-  <div id="batches">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <div>
-        <h2 style="font-size:1.4rem; font-weight:800; margin:0;">Available Training Batches</h2>
-        <p class="muted" style="margin-top:4px;">Join a scheduled cohort to study with peers and direct mentor guidance</p>
-      </div>
-      <span class="badge badge-neutral" style="font-size:0.85rem;">{{ course.batches|length }} Batch{{ 'es' if course.batches|length != 1 else '' }}</span>
-    </div>
-
-    {% if course.batches %}
-    <div class="card" style="overflow:hidden;">
-      <div class="card-body" style="padding:0;">
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Batch Name</th>
-                <th>Mentor</th>
-                <th>Timeline</th>
-                <th>Capacity & Enrolled</th>
-                <th>Status</th>
-                <th style="text-align:right;">Registration</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for b in course.batches %}
-              <tr>
-                <td>
-                  <div style="font-weight:700; font-size:0.95rem;">{{ b.name }}</div>
-                  {% if b.notes %}
-                  <div class="muted text-sm">{{ b.notes }}</div>
-                  {% endif %}
-                </td>
-                <td style="font-weight:600; font-size:0.88rem;">{{ b.instructor_name }}</td>
-                <td class="text-sm muted">
-                  {{ b.start_date }} &rarr; {{ b.end_date }}
-                </td>
-                <td>
-                  <span class="badge badge-neutral">
-                    {{ b.enrolled_count }} / {{ b.capacity if b.capacity > 0 else '∞' }} Enrolled
-                  </span>
-                </td>
-                <td>
-                  <span class="badge {{ 'badge-success' if b.is_open else 'badge-neutral' }}">
-                    {{ 'Open' if b.is_open else 'Closed' }}
-                  </span>
-                </td>
-                <td style="text-align:right;">
-                  {% if b.is_open %}
-                    {% if user and user.role == "trainee" %}
-                    <button type="button" class="btn btn-primary btn-sm"
-                      onclick="openRequestModal({{ b.id }}, '{{ b.name|e }}', '{{ course.name|e }}')">
-                      Request to Join
-                    </button>
-                    {% elif user %}
-                    <span class="muted text-sm">{{ user.role|capitalize }}</span>
-                    {% else %}
-                    <a href="/login?next=/courses/{{ course.id }}" class="btn btn-primary btn-sm">
-                      Login to Request
-                    </a>
-                    {% endif %}
-                  {% else %}
-                  <span class="muted text-sm" title="{{ b.close_reason or 'Registration Closed' }}">
-                    {{ b.close_reason or 'Closed' }}
-                  </span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    {% else %}
-    <div class="card" style="padding:48px; text-align:center;">
-      <p class="muted">No upcoming batches currently scheduled for this course. Inquire below for upcoming batch dates.</p>
-      <a href="/#contact" class="btn btn-secondary" style="margin-top:12px;">Contact Admissions</a>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
-<!-- REQUEST ENROLLMENT MODAL (For logged-in trainees) -->
-<div id="request-enroll-modal" class="modal-overlay">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title">Request Batch Enrollment</span>
-      <button class="modal-close" data-modal-close="request-enroll-modal">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <form id="request-enroll-form" method="post" action="">
-      <input type="hidden" name="return_to" value="/courses/{{ course.id }}">
-      <div class="modal-body">
-        <div style="margin-bottom:16px; background:var(--color-surface); padding:12px 16px; border-radius:8px; border:1px solid var(--color-border);">
-          <div style="font-size:0.8rem; color:var(--color-text-muted);">Program</div>
-          <div id="modal-course-name" style="font-weight:700; font-size:1rem; color:var(--color-text); margin-top:2px;"></div>
-          <div id="modal-batch-name" style="font-size:0.88rem; color:var(--color-primary); font-weight:600; margin-top:2px;"></div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="trainee-note">Note to Admissions (Optional)</label>
-          <textarea id="trainee-note" name="trainee_note" class="form-input" rows="3" placeholder="Tell us about your background or why you want to join this cohort..."></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close="request-enroll-modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Submit Request</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-function openRequestModal(batchId, batchName, courseName) {
-  const form = document.getElementById('request-enroll-form');
-  form.action = '/trainee/batches/' + batchId + '/request';
-  document.getElementById('modal-course-name').textContent = courseName;
-  document.getElementById('modal-batch-name').textContent = 'Batch: ' + batchName;
-  openModal('request-enroll-modal');
-}
-</script>
+{% if user and user.role == 'trainee' %}<dialog class="enrollment-dialog" id="request-enroll-modal" aria-labelledby="enrollment-title">
+  <div class="dialog-heading"><h2 id="enrollment-title">طلب الالتحاق بالدفعة</h2><button type="button" class="lightbox-close" data-dialog-close aria-label="إغلاق">×</button></div>
+  <form id="request-enroll-form" method="post" action=""><input type="hidden" name="return_to" value="/courses/{{ course.id }}">
+    <div class="enrollment-summary"><span id="modal-course-name"></span><strong id="modal-batch-name"></strong></div>
+    <label for="trainee-note">ملاحظة للقبول <span class="muted">(اختياري)</span></label><textarea id="trainee-note" name="trainee_note" rows="4"></textarea>
+    <div class="dialog-actions"><button type="button" class="btn btn-secondary" data-dialog-close>إلغاء</button><button type="submit" class="btn btn-primary">إرسال الطلب</button></div>
+  </form>
+</dialog>{% endif %}
 {% endblock %}

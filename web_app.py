@@ -16,6 +16,7 @@ Authorization: Uses existing has_permission() for all protected routes.
 import os
 import re
 import sys
+import logging
 from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import quote
@@ -171,34 +172,31 @@ async def public_home(request: Request):
     conn = get_db()
     try:
         pub_svc = PublicService(conn)
-        org = pub_svc.get_org_settings()
-        stats = pub_svc.get_public_stats()
-        featured_courses = pub_svc.get_featured_courses()
+        org = pub_svc.get_public_org_settings()
+        courses = pub_svc.get_featured_courses()
         upcoming_batches = pub_svc.get_upcoming_batches()
         completed_batches = pub_svc.get_completed_batches()
         graduates = pub_svc.get_public_graduates()
-        gallery = pub_svc.get_public_gallery()
+        gallery_items = pub_svc.get_public_gallery()
         testimonials = pub_svc.get_public_testimonials()
         return render(
             request,
             "public/index.html",
-            page_title=f"{org.get('org_name', 'AFAQ Academy')} — Excellence in Technology & Management",
+            page_title=f"{org.get('org_name', 'أكاديمية آفاق')} — {org.get('tagline', '')}",
             active_page="home",
             org=org,
             org_settings=org,
-            stats=stats,
-            featured_courses=featured_courses,
+            courses=courses,
             upcoming_batches=upcoming_batches,
             completed_batches=completed_batches,
             graduates=graduates,
-            gallery=gallery,
+            gallery_items=gallery_items,
             testimonials=testimonials,
+            current_year=datetime.now().year,
         )
-    except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        print(f"Error in public_home: {tb}")
-        return HTMLResponse(f"<html><body><h2>Error in public_home:</h2><pre>{tb}</pre></body></html>", status_code=500)
+    except Exception:
+        logging.exception("Error rendering public homepage")
+        return HTMLResponse("<!doctype html><html lang=\"ar\" dir=\"rtl\"><meta charset=\"utf-8\"><title>تعذر تحميل الصفحة</title><body><main><h1>تعذر تحميل الصفحة الآن</h1><p>يرجى المحاولة مرة أخرى بعد قليل.</p></main></body></html>", status_code=500)
     finally:
         conn.close()
 
@@ -208,7 +206,7 @@ async def public_course_details(request: Request, course_id: int):
     conn = get_db()
     try:
         pub_svc = PublicService(conn)
-        org = pub_svc.get_org_settings()
+        org = pub_svc.get_public_org_settings()
         course = pub_svc.get_course_details(course_id)
         if not course:
             flash(request, "Course not found or not currently publicly available.", "error")
@@ -221,6 +219,7 @@ async def public_course_details(request: Request, course_id: int):
             org=org,
             org_settings=org,
             course=course,
+            current_year=datetime.now().year,
         )
     finally:
         conn.close()
@@ -242,15 +241,15 @@ async def submit_contact(
     phone = phone.strip()
 
     if not name or not email or not subject or not message:
-        flash(request, "Please fill in all required fields (Name, Email, Subject, Message).", "error")
+        flash(request, "يرجى استكمال الحقول المطلوبة.", "error")
         return RedirectResponse("/#contact", status_code=302)
 
     if "@" not in email or "." not in email:
-        flash(request, "Please enter a valid email address.", "error")
+        flash(request, "يرجى إدخال بريد إلكتروني صحيح.", "error")
         return RedirectResponse("/#contact", status_code=302)
 
     if len(name) > 100 or len(subject) > 200 or len(message) > 5000:
-        flash(request, "One of the submitted fields exceeds maximum length limit.", "error")
+        flash(request, "تجاوز أحد الحقول الحد الأقصى المسموح به.", "error")
         return RedirectResponse("/#contact", status_code=302)
 
     conn = get_db()
@@ -263,10 +262,11 @@ async def submit_contact(
             message=message,
             phone=phone
         )
-        flash(request, "Thank you! Your message has been sent to our team. We will get back to you shortly.", "success")
+        flash(request, "شكرًا لك، تم تسجيل رسالتك لدى الأكاديمية.", "success")
         return RedirectResponse("/#contact", status_code=302)
-    except Exception as e:
-        flash(request, f"Unable to submit message: {e}", "error")
+    except Exception:
+        logging.exception("Unable to save public contact message")
+        flash(request, "تعذر تسجيل الرسالة الآن. يرجى المحاولة مرة أخرى.", "error")
         return RedirectResponse("/#contact", status_code=302)
     finally:
         conn.close()
@@ -625,7 +625,7 @@ async def admin_toggle_user_status(
 # ── COURSES ───────────────────────────────────────────────────────────────────
 
 @app.get("/admin/courses", response_class=HTMLResponse)
-async def admin_courses(request: Request):
+async def admin_courses(request: Request, edit_course_id: int = None):
     user = require_role(request, "admin")
     if not user:
         return RedirectResponse("/login", status_code=302)
@@ -638,7 +638,9 @@ async def admin_courses(request: Request):
                       page_title="Courses",
                       active_page="courses",
                       courses=course_svc.get_all(),
-                      instructors=admin_svc.get_active_instructors())
+                      instructors=admin_svc.get_active_instructors(),
+                      edit_course=(course_svc.get_by_id(edit_course_id)
+                                   if edit_course_id is not None else None))
     finally:
         conn.close()
 

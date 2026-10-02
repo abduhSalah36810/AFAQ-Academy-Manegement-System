@@ -74,7 +74,7 @@
         </div>
 
         <div class="flex items-center gap-2" style="margin-top:10px; padding-top:12px; border-top:1px solid var(--color-border); justify-content:space-between;">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="editCourse({{ course[0] }}, '{{ course[1]|escape }}', '{{ (course[4] or '')|escape }}', '{{ course[5] or '' }}')">
+          <button type="button" class="btn btn-ghost btn-sm" data-edit-course="{{ course|tojson|forceescape }}">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
             </svg>
@@ -255,14 +255,27 @@
 </div>
 
 <script>
-  function editCourse(id, name, desc, insId) {
+  function openCourseEdit(course) {
+    const [id, name, , , desc, insId] = course;
     document.getElementById('edit-course-form').action = '/admin/courses/' + id + '/edit';
     document.getElementById('edit-c-name').value = name;
     document.getElementById('edit-c-desc').value = desc || '';
     document.getElementById('edit-c-instructor').value = insId || '';
     openModal('edit-course-modal');
   }
+
+  document.querySelectorAll('[data-edit-course]').forEach(button => {
+    button.addEventListener('click', () => openCourseEdit(JSON.parse(button.dataset.editCourse)));
+  });
 </script>
+
+{% if edit_course %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    openCourseEdit({{ edit_course|tojson }});
+  });
+</script>
+{% endif %}
 
 {% if show_modal == 'create' %}
 <script>document.addEventListener('DOMContentLoaded', function () { openModal('create-course-modal'); });</script>
