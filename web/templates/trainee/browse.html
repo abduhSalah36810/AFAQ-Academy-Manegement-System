@@ -1,16 +1,16 @@
 {% extends "layout.html" %}
-{% block title %}Browse Courses — AFAQ Academy{% endblock %}
+{% block title %}استعراض الدورات — أكاديمية آفاق{% endblock %}
 
 {% block content %}
 <div class="page-content">
   <div class="page-header page-header-row">
     <div>
-      <h1 class="page-title">Browse Courses & Batches</h1>
-      <p class="page-subtitle">Discover available academy programs and request enrollment in upcoming batches</p>
+      <h1 class="page-title">استعراض الدورات والدفعات</h1>
+      <p class="page-subtitle">تعرّف على برامج الأكاديمية واطلب الانضمام إلى الدفعات القادمة</p>
     </div>
     <a href="/trainee/batches" class="btn btn-secondary">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-      My Batches
+      دفعاتي
     </a>
   </div>
 
@@ -36,9 +36,9 @@
             <p class="muted" style="margin:4px 0 0 0; font-size:0.9rem; line-height:1.45;">{{ course[4] }}</p>
             {% endif %}
             <div style="display:flex; gap:16px; margin-top:8px; font-size:0.82rem; color:var(--color-text-muted);">
-              <span>Instructor: <strong>{{ course[2] or 'AFAQ Faculty' }}</strong></span>
+              <span>المحاضر: <strong>{{ course[2] or 'هيئة التدريس بالأكاديمية' }}</strong></span>
               <span>•</span>
-              <span>Available Batches: <strong>{{ batches|length }}</strong></span>
+              <span>الدفعات المتاحة: <strong class="num-cell">{{ batches|length }}</strong></span>
             </div>
           </div>
         </div>
@@ -47,7 +47,7 @@
       <!-- Batches inside this course -->
       <div class="card-body" style="padding:20px 24px;">
         <div style="font-size:0.85rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--color-text-muted); margin-bottom:14px;">
-          Available Batches
+          الدفعات المتاحة
         </div>
 
         {% if batches %}
@@ -57,10 +57,10 @@
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span class="badge {{ 'badge-success' if b[8] == 'active' else 'badge-warning' }}">
-                  {{ b[8].capitalize() }}
+                  {{ {'active': 'متاحة', 'upcoming': 'قادمة', 'completed': 'مكتملة', 'cancelled': 'ملغاة'}.get(b[8], b[8] | capitalize) }}
                 </span>
                 <span class="badge badge-neutral" style="font-size:0.75rem;">
-                  {{ b[11] }}/{{ b[5] if b[5] > 0 else '∞' }} Enrolled
+                  <span class="num-cell">{{ b[11] }}/{{ b[5] if b[5] > 0 else '∞' }}</span> مسجل
                 </span>
               </div>
 
@@ -68,7 +68,7 @@
 
               <div style="font-size:0.82rem; color:var(--color-text-muted); margin-top:6px; display:flex; align-items:center; gap:6px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                <span>{{ b[4] or course[2] or 'Instructor Assigned' }}</span>
+                <span>{{ b[4] or course[2] or 'محاضر معين' }}</span>
               </div>
 
               {% if b[6] or b[7] %}
@@ -83,7 +83,7 @@
               <button type="button" class="btn btn-primary btn-sm btn-full"
                 onclick="openRequestModal({{ b[0] }}, '{{ b[2]|e }}', '{{ course[1]|e }}')">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                Request Enrollment
+                طلب الانضمام
               </button>
             </div>
           </div>
@@ -91,7 +91,7 @@
         </div>
         {% else %}
         <div style="font-size:0.88rem; color:var(--color-text-muted); padding:16px; background:var(--color-bg); border-radius:8px; border:1px dashed var(--color-border); text-align:center;">
-          No open batches for this course at the moment. Check back soon!
+          لا توجد دفعات متاحة لهذه الدورة حاليًا. يُرجى مراجعة الصفحة لاحقًا.
         </div>
         {% endif %}
       </div>
@@ -105,8 +105,8 @@
         <div class="empty-icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         </div>
-        <div class="empty-title">No courses available</div>
-        <div class="empty-description">There are no active courses listed in the academy right now.</div>
+        <div class="empty-title">لا توجد دورات متاحة</div>
+        <div class="empty-description">لا توجد دورات نشطة معروضة في الأكاديمية حاليًا.</div>
       </div>
     </div>
   </div>
@@ -117,7 +117,7 @@
 <div id="request-enroll-modal" class="modal-overlay">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">Request Batch Enrollment</span>
+      <span class="modal-title">طلب الانضمام إلى دفعة</span>
       <button class="modal-close" data-modal-close="request-enroll-modal">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
@@ -125,19 +125,19 @@
     <form id="request-enroll-form" method="post" action="">
       <div class="modal-body">
         <div style="margin-bottom:16px; background:var(--color-surface); padding:12px 16px; border-radius:8px; border:1px solid var(--color-border);">
-          <div style="font-size:0.8rem; color:var(--color-text-muted);">Selected Program</div>
+          <div style="font-size:0.8rem; color:var(--color-text-muted);">البرنامج المحدد</div>
           <div id="modal-course-name" style="font-weight:700; font-size:1rem; color:var(--color-text); margin-top:2px;"></div>
           <div id="modal-batch-name" style="font-size:0.88rem; color:var(--color-primary); font-weight:600; margin-top:2px;"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="trainee-note">Note to Academy (Optional)</label>
-          <textarea id="trainee-note" name="trainee_note" class="form-input" rows="3" placeholder="Tell us about your background or why you want to join this batch..."></textarea>
+          <label class="form-label" for="trainee-note">رسالة إلى الأكاديمية (اختياري)</label>
+          <textarea id="trainee-note" name="trainee_note" class="form-input" rows="3" placeholder="أخبرنا عن خلفيتك أو سبب رغبتك في الانضمام إلى هذه الدفعة..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close="request-enroll-modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Submit Request</button>
+        <button type="button" class="btn btn-secondary" data-modal-close="request-enroll-modal">إلغاء</button>
+        <button type="submit" class="btn btn-primary">إرسال الطلب</button>
       </div>
     </form>
   </div>
@@ -148,7 +148,7 @@ function openRequestModal(batchId, batchName, courseName) {
   const form = document.getElementById('request-enroll-form');
   form.action = '/trainee/batches/' + batchId + '/request';
   document.getElementById('modal-course-name').textContent = courseName;
-  document.getElementById('modal-batch-name').textContent = 'Batch: ' + batchName;
+  document.getElementById('modal-batch-name').textContent = 'الدفعة: ' + batchName;
   openModal('request-enroll-modal');
 }
 </script>

@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
-{% block title %}My Courses — AFAQ Academy{% endblock %}
+{% block title %}دوراتي — أكاديمية آفاق{% endblock %}
 
 {% block content %}
 <div class="page-content">
   <div class="page-header">
-    <h1 class="page-title">My Courses</h1>
-    <p class="page-subtitle">You are enrolled in {{ courses|length }} course{{ 's' if courses|length != 1 else '' }}</p>
+    <h1 class="page-title">دوراتي</h1>
+    <p class="page-subtitle">أنت مسجل في {{ courses|length }} دورة تدريبية</p>
   </div>
 
   {% if courses %}
@@ -19,13 +19,13 @@
       <div class="course-meta">
         <div class="course-meta-item">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-          Enrolled
+          مسجل
         </div>
       </div>
       <div style="margin-top:12px;">
         <a href="/trainee/materials?course_id={{ course[0] }}" class="btn btn-secondary btn-sm" style="width:100%; justify-content:center;">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-          Materials
+          المواد التعليمية
         </a>
       </div>
     </div>
@@ -38,8 +38,8 @@
         <div class="empty-icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/></svg>
         </div>
-        <div class="empty-title">No courses yet</div>
-        <div class="empty-description">An administrator will enroll you in courses. Check back soon!</div>
+        <div class="empty-title">لا توجد دورات مسجل بها حتى الآن</div>
+        <div class="empty-description">ستظهر دوراتك هنا بعد تسجيلك من قِبل إدارة الأكاديمية.</div>
       </div>
     </div>
   </div>

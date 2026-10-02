@@ -5,8 +5,19 @@ from utils.validation import (
     get_domain_role,
     validate_email_role_match
 )
+from utils.session_config import get_session_secret
 
 class TestSecurity(unittest.TestCase):
+    def test_session_secret_requires_configuration(self):
+        configured = "test-only-session-signing-key"
+        self.assertEqual(
+            get_session_secret({"AFAQ_SECRET_KEY": configured}), configured
+        )
+        with self.assertRaisesRegex(RuntimeError, "AFAQ_SECRET_KEY"):
+            get_session_secret({})
+        with self.assertRaisesRegex(RuntimeError, "AFAQ_SECRET_KEY"):
+            get_session_secret({"SECRET_KEY": "legacy-variable-is-not-used"})
+
     def test_afaq_email(self):
         self.assertTrue(is_afaq_email("student@afaq.trainee.edu"))
         self.assertTrue(is_afaq_email("john.doe-99@afaq.instructor.edu"))

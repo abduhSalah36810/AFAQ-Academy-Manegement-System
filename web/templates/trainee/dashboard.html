@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
-{% block title %}My Dashboard — AFAQ Academy{% endblock %}
+{% block title %}لوحة المتدرب — أكاديمية آفاق{% endblock %}
 
 {% block content %}
 <div class="page-content">
   <div class="page-header">
-    <h1 class="page-title">Welcome, {{ user.name }} 👋</h1>
-    <p class="page-subtitle">Here's your learning overview at AFAQ Academy.</p>
+    <h1 class="page-title">مرحبًا، {{ user.name }} 👋</h1>
+    <p class="page-subtitle">إليك ملخص تقدمك التعليمي في أكاديمية آفاق.</p>
   </div>
 
   <!-- STAT CARDS -->
@@ -17,9 +17,9 @@
         </svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Enrolled</div>
+        <div class="stat-label">الدورات المسجل بها</div>
         <div class="stat-value">{{ courses|length }}</div>
-        <div class="stat-hint">Courses</div>
+        <div class="stat-hint">دورات تدريبية</div>
       </div>
     </div>
 
@@ -30,9 +30,9 @@
         </svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Present</div>
+        <div class="stat-label">حضور</div>
         <div class="stat-value">{{ present_count }}</div>
-        <div class="stat-hint">Attendance records</div>
+        <div class="stat-hint">سجلات الحضور</div>
       </div>
     </div>
 
@@ -43,9 +43,9 @@
         </svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Grades</div>
+        <div class="stat-label">الدرجات</div>
         <div class="stat-value">{{ grades|length }}</div>
-        <div class="stat-hint">Recorded scores</div>
+        <div class="stat-hint">الدرجات المسجلة</div>
       </div>
     </div>
 
@@ -57,9 +57,9 @@
         </svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Avg Score</div>
+        <div class="stat-label">متوسط الدرجات</div>
         <div class="stat-value">{{ "%.0f"|format(avg_score) }}</div>
-        <div class="stat-hint">Across all courses</div>
+        <div class="stat-hint">في جميع الدورات</div>
       </div>
     </div>
     {% endif %}
@@ -69,8 +69,8 @@
   {% if courses %}
   <div class="card" style="margin-bottom:24px;">
     <div class="card-header">
-      <span class="card-title">My Courses</span>
-      <a href="/trainee/courses" class="btn btn-ghost btn-sm">View all →</a>
+      <span class="card-title">دوراتي</span>
+      <a href="/trainee/courses" class="btn btn-ghost btn-sm">عرض الكل ←</a>
     </div>
     <div class="courses-grid" style="padding:var(--space-5);">
       {% for course in courses %}
@@ -89,16 +89,16 @@
   {% if grades %}
   <div class="card">
     <div class="card-header">
-      <span class="card-title">My Grades</span>
-      <a href="/trainee/grades" class="btn btn-ghost btn-sm">View all →</a>
+      <span class="card-title">درجاتي</span>
+      <a href="/trainee/grades" class="btn btn-ghost btn-sm">عرض الكل ←</a>
     </div>
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Course</th>
-            <th>Score</th>
-            <th>Grade</th>
+            <th>الدورة التدريبية</th>
+            <th>الدرجة</th>
+            <th>التقدير</th>
           </tr>
         </thead>
         <tbody>

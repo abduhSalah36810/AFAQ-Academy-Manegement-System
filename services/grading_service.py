@@ -201,9 +201,23 @@ class GradingService:
         )
         trainees = cursor.fetchall()
 
+        score_rows = self.get_all_scores_for_batch(batch_id)
+        scores_by_trainee = {}
+        for tid, _trainee_name, _component_id, _component_name, weight, score in score_rows:
+            scores_by_trainee.setdefault(tid, []).append((weight, score))
+
         result = []
         for tid, name, email in trainees:
-            grade = self.calculate_final_grade(batch_id, tid)
+            scores = scores_by_trainee.get(tid, [])
+            if not scores or sum(row[0] for row in scores) == 0:
+                grade = None
+            else:
+                weighted_sum = sum(
+                    (score / 100.0) * weight
+                    for weight, score in scores
+                    if score is not None
+                )
+                grade = round(weighted_sum, 2)
             result.append((tid, name, email, grade))
         return result
 

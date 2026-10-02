@@ -1,15 +1,15 @@
 {% extends "layout.html" %}
-{% block title %}My Attendance — AFAQ Academy{% endblock %}
+{% block title %}سجلات الحضور — أكاديمية آفاق{% endblock %}
 
 {% block content %}
 <div class="page-content">
   <div class="page-header">
-    <h1 class="page-title">My Attendance</h1>
+    <h1 class="page-title">سجلات الحضور</h1>
     <p class="page-subtitle">
-      {{ attendance|length }} record{{ 's' if attendance|length != 1 else '' }}
+      عدد السجلات: {{ attendance|length }}
       {% if present_count is defined %}
-      · <span style="color:var(--color-success); font-weight:600;">{{ present_count }} present</span>
-      · <span style="color:var(--color-error); font-weight:600;">{{ absent_count }} absent</span>
+      · <span style="color:var(--color-success); font-weight:600;">{{ present_count }} حضور</span>
+      · <span style="color:var(--color-error); font-weight:600;">{{ absent_count }} غياب</span>
       {% endif %}
     </p>
   </div>
@@ -23,7 +23,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Present</div>
+        <div class="stat-label">حاضر</div>
         <div class="stat-value">{{ present_count }}</div>
       </div>
     </div>
@@ -32,7 +32,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Absent</div>
+        <div class="stat-label">غائب</div>
         <div class="stat-value">{{ absent_count }}</div>
       </div>
     </div>
@@ -41,7 +41,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
       </div>
       <div class="stat-content">
-        <div class="stat-label">Rate</div>
+        <div class="stat-label">نسبة الحضور</div>
         <div class="stat-value">{{ attendance_rate }}%</div>
       </div>
     </div>
@@ -49,19 +49,19 @@
 
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Attendance History</span>
+      <span class="card-title">سجل الحضور</span>
       <div class="search-bar">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" class="search-input" placeholder="Filter by course or date…" data-search-table="att-table">
+        <input type="text" class="search-input" placeholder="ابحث باسم الدورة أو التاريخ…" data-search-table="att-table">
       </div>
     </div>
     <div class="table-wrapper">
       <table class="data-table" id="att-table">
         <thead>
           <tr>
-            <th>Course</th>
-            <th>Date</th>
-            <th>Status</th>
+            <th>الدورة التدريبية</th>
+            <th>التاريخ</th>
+            <th>الحالة</th>
           </tr>
         </thead>
         <tbody>
@@ -76,7 +76,7 @@
                 {% else %}
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 {% endif %}
-                {{ row[2] | capitalize }}
+                {{ {'present': 'حاضر', 'absent': 'غائب', 'late': 'متأخر', 'excused': 'مستأذن'}.get(row[2], row[2] | capitalize) }}
               </span>
             </td>
           </tr>
@@ -93,8 +93,8 @@
         <div class="empty-icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         </div>
-        <div class="empty-title">No attendance records yet</div>
-        <div class="empty-description">Your instructor will record your attendance for each session.</div>
+        <div class="empty-title">لا توجد سجلات حضور حتى الآن</div>
+        <div class="empty-description">سيسجل المحاضر حضورك في كل جلسة تدريبية.</div>
       </div>
     </div>
   </div>

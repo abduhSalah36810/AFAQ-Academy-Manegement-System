@@ -129,6 +129,21 @@ class BatchAttendanceService:
         cursor.execute(query, params)
         return cursor.fetchall()
 
+    def get_batch_attendance_export_data(self, batch_id):
+        """Return attendance rows with trainee and session IDs for safe export mapping."""
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+            SELECT ba.trainee_id, u.name, ba.date, ba.status, ba.session_id
+            FROM batch_attendance ba
+            JOIN users u ON ba.trainee_id = u.id
+            WHERE ba.batch_id = ?
+            ORDER BY ba.date DESC, u.name
+            """,
+            (batch_id,)
+        )
+        return cursor.fetchall()
+
     def get_trainee_attendance(self, batch_id, trainee_id):
         """Get all attendance records for a trainee in a batch."""
         cursor = self.connection.cursor()

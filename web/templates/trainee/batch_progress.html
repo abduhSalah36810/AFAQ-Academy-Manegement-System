@@ -1,21 +1,21 @@
 {% extends "layout.html" %}
-{% block title %}Progress — {{ batch[2] }} — AFAQ Academy{% endblock %}
+{% block title %}متابعة الدفعة — {{ batch[2] }} — أكاديمية آفاق{% endblock %}
 
 {% block content %}
 <div class="page-content">
   <div class="page-header page-header-row">
     <div>
       <div class="breadcrumb-nav">
-        <a href="/trainee/batches">My Batches</a>
+        <a href="/trainee/batches">دفعاتي</a>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         <span>{{ batch[2] }}</span>
       </div>
-      <h1 class="page-title">{{ batch[2] }} — Progress</h1>
-      <p class="page-subtitle">{{ batch[14] or 'Course' }} &bull; Instructor: {{ batch[4] or 'AFAQ Faculty' }}</p>
+      <h1 class="page-title">{{ batch[2] }} — متابعة الدفعة</h1>
+      <p class="page-subtitle">{{ batch[14] or 'الدورة التدريبية' }} &bull; المحاضر: {{ batch[4] or 'هيئة التدريس بالأكاديمية' }}</p>
     </div>
     <a href="/trainee/batches" class="btn btn-secondary">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-      Back to Batches
+العودة إلى الدفعات
     </a>
   </div>
 
@@ -32,16 +32,16 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       </div>
       <div class="stat-info">
-        <div class="stat-label">Final Weighted Grade</div>
+        <div class="stat-label">الدرجة النهائية الموزونة</div>
         <div class="stat-value">
           {% if final_grade is not none %}
           {{ "%.1f"|format(final_grade + (total_bonus or 0)) }}%
           {% else %}
-          <span style="font-size:1.2rem; color:var(--color-text-muted);">Pending</span>
+          <span style="font-size:1.2rem; color:var(--color-text-muted);">قيد الرصد</span>
           {% endif %}
         </div>
         {% if total_bonus %}
-        <div class="muted text-sm" style="color:var(--color-success);">Includes +{{ total_bonus }} bonus pts</div>
+        <div class="muted text-sm" style="color:var(--color-success);">تشمل {{ total_bonus }} نقطة إضافية</div>
         {% endif %}
       </div>
     </div>
@@ -51,9 +51,9 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <div class="stat-info">
-        <div class="stat-label">Attendance Rate</div>
+        <div class="stat-label">نسبة الحضور</div>
         <div class="stat-value">{{ att_rate }}%</div>
-        <div class="muted text-sm">{{ present_count }} of {{ total_att }} sessions present</div>
+        <div class="muted text-sm">الحضور في {{ present_count }} من أصل {{ total_att }} جلسة</div>
       </div>
     </div>
 
@@ -62,9 +62,9 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <div class="stat-info">
-        <div class="stat-label">Bonus Points</div>
+        <div class="stat-label">النقاط الإضافية</div>
         <div class="stat-value">+{{ total_bonus or 0 }}</div>
-        <div class="muted text-sm">Awarded for active participation</div>
+        <div class="muted text-sm">مُنحت تقديرًا للمشاركة الفعّالة</div>
       </div>
     </div>
 
@@ -73,9 +73,9 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
       </div>
       <div class="stat-info">
-        <div class="stat-label">Task Submissions</div>
+        <div class="stat-label">تسليمات المهام</div>
         <div class="stat-value">{{ submissions|length }}</div>
-        <div class="muted text-sm">Submitted solutions</div>
+        <div class="muted text-sm">الحلول التي تم تسليمها</div>
       </div>
     </div>
   </div>
@@ -85,25 +85,25 @@
   <div class="card" style="margin-bottom:24px; border-left: 4px solid {{ 'var(--color-success)' if enrollment[7] == 'paid' else ('var(--color-warning)' if enrollment[7] == 'partially_paid' else 'var(--color-text-muted)') }};">
     <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; padding:16px 20px;">
       <div>
-        <div style="font-size:0.85rem; color:var(--color-text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Tuition &amp; Payment Status</div>
+        <div style="font-size:0.85rem; color:var(--color-text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">الرسوم وحالة السداد</div>
         <div style="display:flex; align-items:baseline; gap:12px; margin-top:4px; flex-wrap:wrap;">
-          <span style="font-size:1.3rem; font-weight:700;">Paid: ${{ '%.2f'|format(enrollment[6] or 0.0) }}</span>
-          <span class="muted text-sm">of ${{ '%.2f'|format(enrollment[5] or 0.0) }} Total Fee</span>
+          <span style="font-size:1.3rem; font-weight:700;">المدفوع: ${{ '%.2f'|format(enrollment[6] or 0.0) }}</span>
+          <span class="muted text-sm">من إجمالي الرسوم ${{ '%.2f'|format(enrollment[5] or 0.0) }}</span>
           {% if enrollment[5] and enrollment[5] > (enrollment[6] or 0) %}
-          <span style="color:var(--color-warning); font-size:0.85rem; font-weight:600;">(Remaining: ${{ '%.2f'|format(enrollment[5] - (enrollment[6] or 0)) }})</span>
+          <span style="color:var(--color-warning); font-size:0.85rem; font-weight:600;">(المتبقي: ${{ '%.2f'|format(enrollment[5] - (enrollment[6] or 0)) }})</span>
           {% endif %}
         </div>
         {% if enrollment[8] %}
-        <div class="muted text-sm" style="margin-top:4px;"><strong>Note:</strong> {{ enrollment[8] }}</div>
+        <div class="muted text-sm" style="margin-top:4px;"><strong>ملاحظة:</strong> {{ enrollment[8] }}</div>
         {% endif %}
       </div>
       <div>
         {% if enrollment[7] == 'paid' %}
-        <span class="badge badge-success" style="font-size:0.88rem; padding:6px 14px;">Paid in Full ✓</span>
+        <span class="badge badge-success" style="font-size:0.88rem; padding:6px 14px;">مسدد بالكامل ✓</span>
         {% elif enrollment[7] == 'partially_paid' %}
-        <span class="badge badge-warning" style="font-size:0.88rem; padding:6px 14px;">Partially Paid</span>
+        <span class="badge badge-warning" style="font-size:0.88rem; padding:6px 14px;">مسدد جزئيًا</span>
         {% else %}
-        <span class="badge badge-neutral" style="font-size:0.88rem; padding:6px 14px;">Payment Pending</span>
+        <span class="badge badge-neutral" style="font-size:0.88rem; padding:6px 14px;">بانتظار السداد</span>
         {% endif %}
       </div>
     </div>
@@ -114,7 +114,7 @@
     <!-- 1. GRADES BREAKDOWN -->
     <div class="card">
       <div class="card-header" style="padding:16px 20px;">
-        <h2 class="card-title" style="font-size:1.05rem;">Grading Components</h2>
+        <h2 class="card-title" style="font-size:1.05rem;">عناصر التقييم</h2>
       </div>
       <div class="card-body" style="padding:0;">
         {% if scores %}
@@ -122,10 +122,10 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Component</th>
-                <th>Weight</th>
-                <th>Score</th>
-                <th>Notes</th>
+                <th>عنصر التقييم</th>
+                <th>الوزن</th>
+                <th>الدرجة</th>
+                <th>ملاحظات</th>
               </tr>
             </thead>
             <tbody>
@@ -139,7 +139,7 @@
                   <span style="font-weight:700; color:var(--color-primary);">{{ sc[3] }}</span>
                   <span class="muted text-sm">/ 100</span>
                   {% else %}
-                  <span class="muted text-sm">Not graded yet</span>
+                  <span class="muted text-sm">لم تُرصد الدرجة بعد</span>
                   {% endif %}
                 </td>
                 <td class="muted text-sm">{{ sc[4] or '—' }}</td>
@@ -150,8 +150,8 @@
         </div>
         {% else %}
         <div class="empty-state" style="padding:32px;">
-          <div class="empty-title" style="font-size:0.95rem;">No grading components configured</div>
-          <div class="empty-description">Grading criteria will be published by your instructor soon.</div>
+          <div class="empty-title" style="font-size:0.95rem;">لم تُضف عناصر تقييم بعد</div>
+          <div class="empty-description">سيعلن المحاضر عن معايير التقييم قريبًا.</div>
         </div>
         {% endif %}
       </div>
@@ -161,26 +161,26 @@
     {% if bonuses %}
     <div class="card">
       <div class="card-header" style="padding:16px 20px;">
-        <h2 class="card-title" style="font-size:1.05rem;">Earned Bonuses</h2>
+        <h2 class="card-title" style="font-size:1.05rem;">النقاط الإضافية المكتسبة</h2>
       </div>
       <div class="card-body" style="padding:0;">
         <div class="table-responsive">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Points</th>
-                <th>Reason</th>
-                <th>Awarded By</th>
-                <th>Date</th>
+                <th>النقاط</th>
+                <th>السبب</th>
+                <th>مُنحت بواسطة</th>
+                <th>التاريخ</th>
               </tr>
             </thead>
             <tbody>
               {% for b in bonuses %}
               {# b: id, amount, reason, awarded_at, batch_name, course_name, awarded_by_name #}
               <tr>
-                <td><span class="badge badge-success">+{{ b[1] }} pts</span></td>
+                <td><span class="badge badge-success">+{{ b[1] }} نقطة</span></td>
                 <td style="font-weight:600;">{{ b[2] }}</td>
-                <td class="muted text-sm">{{ b[6] or 'Instructor' }}</td>
+                <td class="muted text-sm">{{ b[6] or 'المحاضر' }}</td>
                 <td class="muted text-sm">{{ b[3] }}</td>
               </tr>
               {% endfor %}
@@ -194,8 +194,8 @@
     <!-- 3. TASKS & SUBMISSIONS -->
     <div class="card">
       <div class="card-header" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
-        <h2 class="card-title" style="font-size:1.05rem;">Course Tasks & Assignments</h2>
-        <span class="badge badge-neutral">{{ tasks|length if tasks else submissions|length }} Tasks</span>
+        <h2 class="card-title" style="font-size:1.05rem;">المهام والتكليفات</h2>
+        <span class="badge badge-neutral">{{ tasks|length if tasks else submissions|length }} مهمة</span>
       </div>
       <div class="card-body" style="padding:0;">
         {% if tasks %}
@@ -203,14 +203,14 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Task</th>
-                <th>Chapter</th>
-                <th>Type</th>
-                <th>Max Score</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Score</th>
-                <th style="text-align:right;">Action</th>
+                <th>المهمة</th>
+                <th>الفصل</th>
+                <th>النوع</th>
+                <th>الدرجة القصوى</th>
+                <th>موعد التسليم</th>
+                <th>الحالة</th>
+                <th>الدرجة</th>
+                <th style="text-align:right;">الإجراء</th>
               </tr>
             </thead>
             <tbody>
@@ -224,17 +224,17 @@
                   <div class="muted text-sm" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ t[5] }}</div>
                   {% endif %}
                 </td>
-                <td class="muted text-sm">{{ t[3] or 'General' }}</td>
-                <td><span class="badge badge-neutral">{{ t[6]|capitalize }}</span></td>
-                <td>{{ t[8] }} pts</td>
+                <td class="muted text-sm">{{ t[3] or 'عام' }}</td>
+                <td><span class="badge badge-neutral">{{ {'assignment': 'تكليف', 'project': 'مشروع', 'quiz': 'اختبار', 'reading': 'قراءة', 'other': 'أخرى'}.get(t[6], t[6] | capitalize) }}</span></td>
+                <td>{{ t[8] }} نقطة</td>
                 <td class="muted text-sm">{{ t[7] or '—' }}</td>
                 <td>
                   {% if sub %}
                   <span class="badge {{ 'badge-success' if sub[6] == 'approved' else ('badge-warning' if sub[6] in ('submitted', 'under_review') else ('badge-error' if sub[6] == 'rejected' else 'badge-info')) }}">
-                    {{ sub[6]|replace('_', ' ')|capitalize }}
+                    {{ {'approved': 'معتمد', 'submitted': 'تم التسليم', 'under_review': 'قيد المراجعة', 'rejected': 'مرفوض', 'needs_revision': 'يتطلب تعديلًا'}.get(sub[6], sub[6] | replace('_', ' ') | capitalize) }}
                   </span>
                   {% else %}
-                  <span class="badge badge-neutral">Not Submitted</span>
+                  <span class="badge badge-neutral">لم يتم التسليم</span>
                   {% endif %}
                 </td>
                 <td>
@@ -247,14 +247,14 @@
                 <td style="text-align:right;">
                   <button type="button" class="btn btn-secondary btn-sm"
                     onclick="openSubmitModal({{ t[0] }}, '{{ t[4]|e }}', '{{ (sub[10] or '')|e if sub else '' }}', '{{ (sub[11] or '')|e if sub else '' }}')">
-                    {{ 'Resubmit' if sub else 'Submit' }}
+                    {{ 'إعادة التسليم' if sub else 'تسليم الحل' }}
                   </button>
                 </td>
               </tr>
               {% if sub and sub[9] %}
               <tr style="background:var(--color-surface);">
                 <td colspan="8" style="padding:8px 16px; font-size:0.82rem; color:var(--color-text-muted);">
-                  <strong>Feedback:</strong> {{ sub[9] }}
+                  <strong>ملاحظات المحاضر:</strong> {{ sub[9] }}
                 </td>
               </tr>
               {% endif %}
@@ -267,11 +267,11 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Task</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th>Score</th>
-                <th>Feedback</th>
+                <th>المهمة</th>
+                <th>تاريخ التسليم</th>
+                <th>الحالة</th>
+                <th>الدرجة</th>
+                <th>الملاحظات</th>
               </tr>
             </thead>
             <tbody>
@@ -281,7 +281,7 @@
                 <td class="muted text-sm">{{ s[5] }}</td>
                 <td>
                   <span class="badge {{ 'badge-success' if s[6] == 'approved' else ('badge-warning' if s[6] in ('submitted', 'under_review') else 'badge-neutral') }}">
-                    {{ s[6]|replace('_', ' ')|capitalize }}
+                    {{ {'approved': 'معتمد', 'submitted': 'تم التسليم', 'under_review': 'قيد المراجعة', 'rejected': 'مرفوض', 'needs_revision': 'يتطلب تعديلًا'}.get(s[6], s[6] | replace('_', ' ') | capitalize) }}
                   </span>
                 </td>
                 <td>{{ s[7] if s[7] is not none else '—' }} / {{ s[8] }}</td>
@@ -293,8 +293,8 @@
         </div>
         {% else %}
         <div class="empty-state" style="padding:32px;">
-          <div class="empty-title" style="font-size:0.95rem;">No tasks assigned yet</div>
-          <div class="empty-description">Tasks and assignments will appear here once published.</div>
+          <div class="empty-title" style="font-size:0.95rem;">لا توجد مهام مسندة حتى الآن</div>
+          <div class="empty-description">ستظهر المهام والتكليفات هنا بعد نشرها.</div>
         </div>
         {% endif %}
       </div>
@@ -303,7 +303,7 @@
     <!-- 4. ATTENDANCE LOG -->
     <div class="card">
       <div class="card-header" style="padding:16px 20px;">
-        <h2 class="card-title" style="font-size:1.05rem;">Attendance Records</h2>
+        <h2 class="card-title" style="font-size:1.05rem;">سجلات الحضور</h2>
       </div>
       <div class="card-body" style="padding:0;">
         {% if attendance %}
@@ -311,21 +311,21 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Session</th>
-                <th>Status</th>
-                <th>Notes</th>
+                <th>التاريخ</th>
+                <th>الجلسة</th>
+                <th>الحالة</th>
+                <th>ملاحظات</th>
               </tr>
             </thead>
             <tbody>
               {% for a in attendance %}
               {# a: date, status, notes, session_title #}
               <tr>
-                <td style="font-weight:600;">{{ a[0] }}</td>
-                <td class="muted text-sm">{{ a[3] or 'General Session' }}</td>
+                <td class="date-cell" style="font-weight:600;">{{ a[0] }}</td>
+                <td class="muted text-sm">{{ a[3] or 'جلسة عامة' }}</td>
                 <td>
                   <span class="badge {{ 'badge-success' if a[1] == 'present' else ('badge-warning' if a[1] == 'late' else ('badge-info' if a[1] == 'excused' else 'badge-error')) }}">
-                    {{ a[1]|capitalize }}
+                    {{ {'present': 'حاضر', 'absent': 'غائب', 'late': 'متأخر', 'excused': 'مستأذن'}.get(a[1], a[1] | capitalize) }}
                   </span>
                 </td>
                 <td class="muted text-sm">{{ a[2] or '—' }}</td>
@@ -336,8 +336,8 @@
         </div>
         {% else %}
         <div class="empty-state" style="padding:32px;">
-          <div class="empty-title" style="font-size:0.95rem;">No attendance recorded yet</div>
-          <div class="empty-description">Session attendance will be logged here by your instructor.</div>
+          <div class="empty-title" style="font-size:0.95rem;">لا توجد سجلات حضور حتى الآن</div>
+          <div class="empty-description">سيسجل المحاضر حضورك في الجلسات التدريبية.</div>
         </div>
         {% endif %}
       </div>
@@ -349,7 +349,7 @@
 <div id="submit-task-modal" class="modal-overlay">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title" id="submit-modal-title">Submit Task Solution</span>
+      <span class="modal-title" id="submit-modal-title">تسليم حل المهمة</span>
       <button class="modal-close" data-modal-close="submit-task-modal">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
@@ -358,23 +358,23 @@
       <input type="hidden" name="batch_id" value="{{ batch[0] }}" />
       <div class="modal-body">
         <div style="margin-bottom:14px; background:var(--color-surface); padding:10px 14px; border-radius:8px; border:1px solid var(--color-border);">
-          <div style="font-size:0.8rem; color:var(--color-text-muted);">Task</div>
+          <div style="font-size:0.8rem; color:var(--color-text-muted);">المهمة</div>
           <div id="submit-task-name" style="font-weight:700; color:var(--color-text); margin-top:2px;"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="submission-url">Project / Solution URL (e.g. GitHub, Google Drive, Figma)</label>
+          <label class="form-label" for="submission-url">رابط المشروع أو الحل (مثل GitHub أو Google Drive أو Figma)</label>
           <input id="submission-url" name="submission_url" type="url" class="form-input" placeholder="https://github.com/..." />
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="submission-text">Or Solution Text / Code / Notes</label>
-          <textarea id="submission-text" name="submission_text" class="form-input" rows="4" placeholder="Paste your code or answer here..."></textarea>
+          <label class="form-label" for="submission-text">أو اكتب الحل أو الشيفرة أو الملاحظات</label>
+          <textarea id="submission-text" name="submission_text" class="form-input" rows="4" placeholder="اكتب الشيفرة أو الإجابة هنا..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-modal-close="submit-task-modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Submit Solution</button>
+        <button type="button" class="btn btn-secondary" data-modal-close="submit-task-modal">إلغاء</button>
+        <button type="submit" class="btn btn-primary">إرسال الحل</button>
       </div>
     </form>
   </div>

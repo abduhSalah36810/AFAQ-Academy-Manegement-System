@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Login — AFAQ Academy{% endblock %}
+{% block title %}تسجيل الدخول — أكاديمية آفاق{% endblock %}
 
 {% block body %}
 <div class="auth-page">
@@ -18,8 +18,8 @@
         <div class="auth-logo-text">AFAQ<span> Academy</span></div>
       </div>
 
-      <h1 class="auth-heading">Welcome back</h1>
-      <p class="auth-subheading">Sign in to your account to continue learning.</p>
+      <h1 class="auth-heading">مرحبًا بعودتك</h1>
+      <p class="auth-subheading">سجّل الدخول إلى حسابك لمتابعة التعلم.</p>
 
       <!-- Error alert -->
       {% if error %}
@@ -33,7 +33,7 @@
       <form method="post" action="/login" data-loading id="login-form">
         <input type="hidden" name="next" value="{{ next or '' }}">
         <div class="form-group">
-          <label class="form-label" for="email">Email address</label>
+          <label class="form-label" for="email">البريد الإلكتروني</label>
           <div class="input-wrapper">
             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -52,7 +52,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="password">Password</label>
+          <label class="form-label" for="password">كلمة المرور</label>
           <div class="input-wrapper">
             <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -62,11 +62,11 @@
               name="password"
               type="password"
               class="form-input input-with-icon"
-              placeholder="Enter your password"
+              placeholder="أدخل كلمة المرور"
               required
               autocomplete="current-password"
             />
-            <button type="button" class="input-action" data-show-password="password" aria-label="Toggle password visibility">
+            <button type="button" class="input-action" data-show-password="password" aria-label="إظهار أو إخفاء كلمة المرور">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
           </div>
@@ -77,21 +77,21 @@
           id="login-btn"
           class="btn btn-primary btn-full btn-lg"
           style="margin-top:8px;"
-          data-loading-text="Signing in..."
+          data-loading-text="جارٍ تسجيل الدخول..."
         >
-          Sign in
+          تسجيل الدخول
         </button>
       </form>
 
-      <div class="divider"><span>Don't have an account?</span></div>
+      <div class="divider"><span>ليس لديك حساب؟</span></div>
 
       <a href="/signup{{ ('?next=' + next) if next else '' }}" class="btn btn-secondary btn-full">
-        Create a student account
+        إنشاء حساب متدرب
       </a>
 
       <p class="auth-switch" style="margin-top:16px; font-size:12px; color: var(--color-text-faint);">
-        Public registration creates a <strong>student (trainee)</strong> account.<br/>
-        Instructors and admins are created by an administrator.
+        ينشئ التسجيل العام حسابًا <strong>للمتدرب</strong>.<br/>
+        ينشئ مدير النظام حسابات المحاضرين والمديرين.
       </p>
 
     </div>
@@ -106,24 +106,24 @@
     </div>
     <div class="auth-visual-content">
       <div style="font-size:64px; margin-bottom:24px;">🎓</div>
-      <div class="auth-visual-title">AFAQ Academy Management System</div>
+      <div class="auth-visual-title">نظام إدارة أكاديمية آفاق</div>
       <p class="auth-visual-desc">
-        A modern platform for students, instructors, and administrators to collaborate seamlessly.
+        منصة حديثة تجمع المتدربين والمحاضرين والإدارة في تجربة تعليمية متكاملة.
       </p>
       <div style="display:flex; gap:24px; margin-top:40px; justify-content:center;">
         <div style="text-align:center;">
           <div style="font-size:28px; font-weight:800; color:white;">3</div>
-          <div style="font-size:12px; color:rgba(255,255,255,0.6);">Roles</div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.6);">الأدوار</div>
         </div>
         <div style="width:1px; background:rgba(255,255,255,0.15);"></div>
         <div style="text-align:center;">
           <div style="font-size:28px; font-weight:800; color:white;">100%</div>
-          <div style="font-size:12px; color:rgba(255,255,255,0.6);">Web-based</div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.6);">منصة إلكترونية</div>
         </div>
         <div style="width:1px; background:rgba(255,255,255,0.15);"></div>
         <div style="text-align:center;">
           <div style="font-size:28px; font-weight:800; color:white;">∞</div>
-          <div style="font-size:12px; color:rgba(255,255,255,0.6);">Courses</div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.6);">الدورات</div>
         </div>
       </div>
     </div>

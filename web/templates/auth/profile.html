@@ -1,10 +1,10 @@
 {% extends "layout.html" %}
-{% block title %}My Profile — AFAQ Academy{% endblock %}
+{% block title %}الملف الشخصي — أكاديمية آفاق{% endblock %}
 
 {% block content %}
 <div class="card max-w-2xl mx-auto">
   <div class="card-header">
-    <h2 class="card-title">Profile Information</h2>
+    <h2 class="card-title">معلومات الملف الشخصي</h2>
   </div>
   <div class="card-body">
     <div class="flex items-center gap-4 mb-6">
@@ -13,13 +13,13 @@
       </div>
       <div>
         <h3 style="margin:0;font-size:20px;font-weight:600;">{{ user.name }}</h3>
-        <p style="margin:0;color:var(--color-text-muted); text-transform: capitalize;">{{ user.role }}</p>
+        <p style="margin:0;color:var(--color-text-muted);">{{ {'admin': 'مدير النظام', 'instructor': 'المحاضر', 'trainee': 'المتدرب'}.get(user.role, user.role) }}</p>
       </div>
     </div>
     
     <div style="display:grid; gap:16px;">
       <div>
-        <label class="form-label">Email Address</label>
+        <label class="form-label">البريد الإلكتروني</label>
         <div class="form-input" style="background:var(--color-bg); opacity:0.8; cursor:not-allowed;">{{ user.email }}</div>
       </div>
     </div>
@@ -28,17 +28,17 @@
 
 <div class="card max-w-2xl mx-auto mt-6">
   <div class="card-header">
-    <h2 class="card-title">Change Password</h2>
+    <h2 class="card-title">تغيير كلمة المرور</h2>
   </div>
   <div class="card-body">
     <form action="/profile/password" method="POST" id="passwordForm">
       <div class="form-group">
-        <label for="current_password" class="form-label">Current Password</label>
+        <label for="current_password" class="form-label">كلمة المرور الحالية</label>
         <input type="password" id="current_password" name="current_password" class="form-input" required>
       </div>
       
       <div class="form-group">
-        <label for="new_password" class="form-label">New Password</label>
+        <label for="new_password" class="form-label">كلمة المرور الجديدة</label>
         <input type="password" id="new_password" name="new_password" class="form-input" required
                onkeyup="checkPasswordStrength(this.value)">
         <div style="margin-top: 8px;">
@@ -46,12 +46,12 @@
             <div id="strength-bar" style="height: 100%; width: 0%; background: #ef4444; transition: all 0.3s;"></div>
           </div>
           <div id="strength-text" style="font-size: 12px; margin-top: 4px; color: var(--color-text-muted);">
-            Enter a new password (min 12 chars, upper, lower, number, special)
+            أدخل كلمة مرور جديدة (12 حرفًا على الأقل، مع أحرف كبيرة وصغيرة ورقم ورمز)
           </div>
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary" id="pwdSubmitBtn">Update Password</button>
+      <button type="submit" class="btn btn-primary" id="pwdSubmitBtn">تحديث كلمة المرور</button>
     </form>
   </div>
 </div>
@@ -70,7 +70,7 @@ function checkPasswordStrength(password) {
   score = Math.min(4, Math.floor(score));
   
   const percent = score * 25;
-  const labels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
+  const labels = ["ضعيفة جدًا", "ضعيفة", "متوسطة", "قوية", "قوية جدًا"];
   const colors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#10b981"];
 
   const bar = document.getElementById('strength-bar');
@@ -81,9 +81,9 @@ function checkPasswordStrength(password) {
   
   if (password.length === 0) {
     bar.style.width = '0%';
-    text.textContent = 'Enter a new password (min 12 chars, upper, lower, number, special)';
+    text.textContent = 'أدخل كلمة مرور جديدة (12 حرفًا على الأقل، مع أحرف كبيرة وصغيرة ورقم ورمز)';
   } else {
-    text.textContent = 'Strength: ' + labels[score];
+    text.textContent = 'قوة كلمة المرور: ' + labels[score];
   }
 }
 </script>

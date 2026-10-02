@@ -1,30 +1,30 @@
 {% extends "layout.html" %}
-{% block title %}My Grades — AFAQ Academy{% endblock %}
+{% block title %}درجاتي — أكاديمية آفاق{% endblock %}
 
 {% block content %}
 <div class="page-content">
   <div class="page-header">
-    <h1 class="page-title">My Grades</h1>
+    <h1 class="page-title">درجاتي</h1>
     {% if avg_score is not none %}
-    <p class="page-subtitle">Overall average: <strong style="color:var(--color-primary);">{{ "%.1f"|format(avg_score) }}</strong> across {{ grades|length }} course{{ 's' if grades|length != 1 else '' }}</p>
+    <p class="page-subtitle">المتوسط العام: <strong style="color:var(--color-primary);">{{ "%.1f"|format(avg_score) }}</strong> في {{ grades|length }} دورة تدريبية</p>
     {% else %}
-    <p class="page-subtitle">{{ grades|length }} grade record{{ 's' if grades|length != 1 else '' }}</p>
+    <p class="page-subtitle">عدد سجلات الدرجات: {{ grades|length }}</p>
     {% endif %}
   </div>
 
   {% if grades %}
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Grade Report</span>
+      <span class="card-title">كشف الدرجات</span>
     </div>
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Course</th>
-            <th>Score</th>
-            <th>Progress</th>
-            <th>Grade</th>
+            <th>الدورة التدريبية</th>
+            <th>الدرجة</th>
+            <th>نسبة الإنجاز</th>
+            <th>التقدير</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +60,7 @@
     {% if avg_score is not none %}
     <div class="card-footer">
       <div class="flex items-center justify-between flex-wrap gap-3">
-        <span class="text-sm text-muted">Overall average across all graded courses</span>
+        <span class="text-sm text-muted">المتوسط العام للدورات التي رُصدت درجاتها</span>
         <div class="flex items-center gap-3">
           <div class="progress-bar-wrap" style="min-width:120px;">
             <div class="progress-bar-fill {{ 'success' if avg_score >= 70 else ('warning' if avg_score >= 50 else 'error') }}" style="width:{{ avg_score }}%;"></div>
@@ -82,8 +82,8 @@
         <div class="empty-icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         </div>
-        <div class="empty-title">No grades yet</div>
-        <div class="empty-description">Your instructor will record your grades for each course. Check back after your assessments.</div>
+        <div class="empty-title">لا توجد درجات حتى الآن</div>
+        <div class="empty-description">سيرصد المحاضر درجاتك في كل دورة بعد التقييمات.</div>
       </div>
     </div>
   </div>

@@ -14,9 +14,11 @@ Authorization: Uses existing has_permission() for all protected routes.
 """
 
 import os
+import re
 import sys
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 import io
 from fastapi import FastAPI, Request, Form, Response, UploadFile, File
@@ -52,8 +54,11 @@ from services.grading_service import GradingService
 from services.bonus_service import BonusService
 from services import excel_service
 from services.public_service import PublicService
+from utils.session_config import get_session_secret
 
 # ── App setup ───────────────────────────────────────────────────────────────
+SECRET_KEY = get_session_secret()
+
 try:
     create_tables()
 except Exception as e:
@@ -93,8 +98,7 @@ async def debug_templates():
                 files.append(os.path.relpath(os.path.join(r, f), t_dir).replace("\\", "/"))
     return {"exists": t_dir.exists(), "files": sorted(files)}
 
-# Session middleware (signed cookie; keep the secret in env for production)
-SECRET_KEY = os.environ.get("AFAQ_SECRET_KEY", "afaq-academy-secret-key-change-in-production")
+# Session middleware (signed cookie; the key is required from the environment)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, session_cookie="afaq_session")
 
 # Static files & templates
@@ -272,6 +276,36 @@ async def submit_contact(
 # AUTH
 # ══════════════════════════════════════════════════════════════════════════════
 
+_AUTH_UI_MESSAGES = {
+    "Name must contain at least 2 characters.": "يجب ألا يقل الاسم عن حرفين.",
+    "Please use your institutional AFAQ email address (e.g. username@afaq.trainee.edu).":
+        "استخدم بريدك المؤسسي التابع لأكاديمية آفاق، مثل username@afaq.trainee.edu.",
+    "Public signup is available for trainees only. Use your @afaq.trainee.edu address.":
+        "التسجيل العام متاح للمتدربين فقط. استخدم بريدًا ينتهي بـ @afaq.trainee.edu.",
+    "Password must be at least 12 characters.": "يجب ألا تقل كلمة المرور عن 12 حرفًا.",
+    "Password must contain at least one uppercase letter.": "يجب أن تحتوي كلمة المرور على حرف إنجليزي كبير واحد على الأقل.",
+    "Password must contain at least one lowercase letter.": "يجب أن تحتوي كلمة المرور على حرف إنجليزي صغير واحد على الأقل.",
+    "Password must contain at least one number.": "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.",
+    "Password must contain at least one special character (!@#$%^&* etc.).":
+        "يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل.",
+    "This password is too common. Please choose a stronger password.":
+        "كلمة المرور شائعة جدًا. اختر كلمة مرور أقوى.",
+    "Email already exists or signup failed.": "هذا البريد مسجل بالفعل أو تعذر إنشاء الحساب.",
+    "Invalid email or password.": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+    "Your account has been deactivated. Please contact an administrator.":
+        "تم إيقاف حسابك. يُرجى التواصل مع إدارة الأكاديمية.",
+    "Account created successfully.": "تم إنشاء الحساب بنجاح.",
+    "User not found.": "لم يتم العثور على المستخدم.",
+    "Current password is incorrect.": "كلمة المرور الحالية غير صحيحة.",
+    "New password must be different from your current password.":
+        "يجب أن تختلف كلمة المرور الجديدة عن الحالية.",
+    "Password updated successfully.": "تم تحديث كلمة المرور بنجاح.",
+}
+
+
+def _auth_ui_message(message):
+    return _AUTH_UI_MESSAGES.get(message, message)
+
 def _redirect_after_auth(user: dict, next_url: str | None = None) -> RedirectResponse:
     if next_url and next_url.startswith("/") and not next_url.startswith("//"):
         return RedirectResponse(next_url, status_code=302)
@@ -288,7 +322,7 @@ async def login_page(request: Request, next: str | None = None):
     user = get_session_user(request)
     if user:
         return _redirect_after_auth(user, next)
-    return render(request, "auth/login.html", page_title="Login", next=next or "")
+    return render(request, "auth/login.html", page_title="تسجيل الدخول", next=next or "")
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -305,8 +339,8 @@ async def login_submit(
         if user:
             request.session["user"] = user
             return _redirect_after_auth(user, next)
-        return render(request, "auth/login.html", page_title="Login",
-                      error=message, email=email, next=next)
+        return render(request, "auth/login.html", page_title="تسجيل الدخول",
+                      error=_auth_ui_message(message), email=email, next=next)
     finally:
         conn.close()
 
@@ -316,7 +350,7 @@ async def signup_page(request: Request, next: str | None = None):
     user = get_session_user(request)
     if user:
         return _redirect_after_auth(user, next)
-    return render(request, "auth/signup.html", page_title="Sign Up", next=next or "")
+    return render(request, "auth/signup.html", page_title="إنشاء حساب", next=next or "")
 
 
 @app.post("/signup", response_class=HTMLResponse)
@@ -335,12 +369,12 @@ async def signup_submit(
             user, _ = auth.login(email, password)
             if user:
                 request.session["user"] = user
-                flash(request, "Welcome to AFAQ Academy! Your account has been created.", "success")
+                flash(request, "مرحبًا بك في أكاديمية آفاق! تم إنشاء حسابك بنجاح.", "success")
                 return _redirect_after_auth(user, next)
-            return render(request, "auth/login.html", page_title="Login",
-                          success=message, next=next)
-        return render(request, "auth/signup.html", page_title="Sign Up",
-                      error=message, name=name, email=email, next=next)
+            return render(request, "auth/login.html", page_title="تسجيل الدخول",
+                          success=_auth_ui_message(message), next=next)
+        return render(request, "auth/signup.html", page_title="إنشاء حساب",
+                      error=_auth_ui_message(message), name=name, email=email, next=next)
     finally:
         conn.close()
 
@@ -348,7 +382,7 @@ async def signup_submit(
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-    flash(request, "You have been logged out successfully.", "info")
+    flash(request, "تم تسجيل خروجك بنجاح.", "info")
     return RedirectResponse("/", status_code=302)
 
 
@@ -1364,7 +1398,7 @@ async def trainee_dashboard(request: Request):
         avg_score     = (sum(g[1] for g in grades) / len(grades)) if grades else None
 
         return render(request, "trainee/dashboard.html",
-                      page_title="Dashboard",
+                      page_title="لوحة المتدرب",
                       active_page="dashboard",
                       courses=courses,
                       attendance=attendance,
@@ -1386,7 +1420,7 @@ async def trainee_courses(request: Request):
         enroll_svc = EnrollmentService(conn)
         courses    = enroll_svc.get_trainee_courses(user["id"])
         return render(request, "trainee/courses.html",
-                      page_title="My Courses",
+                      page_title="دوراتي",
                       active_page="courses",
                       courses=courses)
     finally:
@@ -1410,7 +1444,7 @@ async def trainee_attendance(request: Request):
         attendance_rate = round((present_count / total * 100)) if total else 0
 
         return render(request, "trainee/attendance.html",
-                      page_title="My Attendance",
+                      page_title="سجلات الحضور",
                       active_page="attendance",
                       attendance=attendance,
                       present_count=present_count,
@@ -1433,7 +1467,7 @@ async def trainee_grades(request: Request):
         avg_score = (sum(g[1] for g in grades) / len(grades)) if grades else None
 
         return render(request, "trainee/grades.html",
-                      page_title="My Grades",
+                      page_title="درجاتي",
                       active_page="grades",
                       grades=grades,
                       avg_score=avg_score)
@@ -1465,7 +1499,7 @@ async def trainee_materials(request: Request, course_id: int = None):
         materials = mat_svc.get_course_materials(course_id)
 
         return render(request, "trainee/materials.html",
-                      page_title="Materials",
+                      page_title="المواد التعليمية",
                       active_page="courses",
                       selected_course=selected_course,
                       materials=materials)
@@ -1484,7 +1518,7 @@ async def view_profile(request: Request):
         return RedirectResponse("/login", status_code=302)
 
     return render(request, "auth/profile.html",
-                  page_title="My Profile",
+                  page_title="الملف الشخصي",
                   active_page="profile")
 
 
@@ -1505,9 +1539,9 @@ async def change_password(
         ok, msg = auth_svc.change_password(user["id"], current_password, new_password)
         if ok:
             audit.log(user, "changed_password", "user", user["id"], "User changed their password")
-            flash(request, msg, "success")
+            flash(request, _auth_ui_message(msg), "success")
         else:
-            flash(request, msg, "error")
+            flash(request, _auth_ui_message(msg), "error")
         return RedirectResponse("/profile", status_code=302)
     finally:
         conn.close()
@@ -2222,16 +2256,10 @@ async def admin_batch_grades(request: Request, batch_id: int):
         total_weight = grading_svc.get_total_weight(batch_id)
         trainees = enroll_svc.get_batch_trainees(batch_id)
         bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
-
-        # Build grades summary: (tid, name, email, {comp_id: score}, final, bonus)
-        grades_summary = []
-        for t in trainees:
-            tid = t[0]
-            scores_raw = grading_svc.get_scores_for_trainee(batch_id, tid)
-            scores_dict = {s[0]: s[3] for s in scores_raw}
-            final = grading_svc.calculate_final_grade(batch_id, tid)
-            bonus = bonus_totals.get(tid, 0)
-            grades_summary.append((tid, t[1], t[2], scores_dict, final, bonus))
+        score_rows = grading_svc.get_all_scores_for_batch(batch_id)
+        grades_summary = excel_service.build_batch_grade_rows(
+            components, trainees, score_rows, bonus_totals
+        )
 
         return render(request, "admin/batch_grades.html",
                       page_title=f"Grades — {batch[2]}",
@@ -2315,6 +2343,95 @@ async def admin_save_batch_grades(request: Request, batch_id: int):
 
 
 # ── EXCEL IMPORT / EXPORT ─────────────────────────────────────────────────────
+
+def _export_content_disposition(prefix: str, batch_name: str, batch_id: int) -> str:
+    """Build an ASCII-safe attachment header with an RFC 5987 UTF-8 filename."""
+    batch_label = str(batch_name or "").strip()
+    batch_label = "".join(
+        "_" if char in "/\\" or ord(char) < 32 or ord(char) == 127 else char
+        for char in batch_label
+    )
+    batch_label = re.sub(r"\s+", "_", batch_label).strip("._")
+
+    ascii_label = re.sub(r"[^A-Za-z0-9._-]+", "_", batch_label).strip("._-")
+    if not ascii_label:
+        ascii_label = f"batch_{batch_id}"
+
+    fallback = f"{prefix}_{ascii_label}.xlsx"
+    unicode_name = f"{prefix}_{batch_label or f'batch_{batch_id}'}.xlsx"
+    encoded_name = quote(unicode_name, safe="")
+    return f'attachment; filename="{fallback}"; filename*=UTF-8\'\'{encoded_name}'
+
+def _get_batch_grade_export_rows(connection, batch_id):
+    """Load batch grade data in bounded queries, not once per trainee."""
+    grading_svc = GradingService(connection)
+    enroll_svc = BatchEnrollmentService(connection)
+    bonus_svc = BonusService(connection)
+    components = grading_svc.get_components(batch_id)
+    trainees = enroll_svc.get_batch_trainees(batch_id)
+    score_rows = grading_svc.get_all_scores_for_batch(batch_id)
+    bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
+    grade_rows = excel_service.build_batch_grade_rows(
+        components, trainees, score_rows, bonus_totals
+    )
+    return components, trainees, grade_rows
+
+
+@app.get("/admin/batches/{batch_id}/export-report")
+@app.get("/instructor/batches/{batch_id}/export-report")
+async def export_official_batch_report(request: Request, batch_id: int):
+    user = require_roles(request, "admin", "instructor")
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    conn = get_db()
+    try:
+        batch_svc = BatchService(conn)
+        batch = batch_svc.get_by_id(batch_id)
+        if not batch:
+            return RedirectResponse("/admin/courses" if user["role"] == "admin" else "/instructor/batches", status_code=302)
+
+        if user["role"] == "instructor" and batch[3] != user["id"]:
+            flash(request, "Not authorized to export this batch.", "error")
+            return RedirectResponse("/instructor/batches", status_code=302)
+
+        session_svc = SessionService(conn)
+        attendance_svc = BatchAttendanceService(conn)
+        enroll_svc = BatchEnrollmentService(conn)
+        grading_svc = GradingService(conn)
+        bonus_svc = BonusService(conn)
+
+        sessions = session_svc.get_by_batch(batch_id)
+        trainees = enroll_svc.get_batch_trainees(batch_id)
+        attendance_records = attendance_svc.get_batch_attendance_export_data(batch_id)
+        components = grading_svc.get_components(batch_id)
+        score_rows = grading_svc.get_all_scores_for_batch(batch_id)
+        bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
+        org_name = PublicService(conn).get_org_settings().get("org_name", "")
+        batch_info = {
+            "academy_name": org_name,
+            "course_name": batch[14],
+            "batch_name": batch[2],
+            "instructor_name": batch[4],
+            "start_date": batch[6],
+        }
+
+        try:
+            file_bytes = excel_service.build_official_batch_workbook(
+                batch_info, sessions, trainees, attendance_records,
+                components, score_rows, bonus_totals,
+            )
+            filename = f"batch_{batch_id}_report.xlsx"
+            return StreamingResponse(
+                io.BytesIO(file_bytes),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+            )
+        except ImportError:
+            flash(request, "openpyxl not installed on server.", "error")
+            return RedirectResponse(f"/admin/batches/{batch_id}" if user["role"] == "admin" else "/instructor/batches", status_code=302)
+    finally:
+        conn.close()
 
 @app.get("/admin/batches/{batch_id}/import")
 @app.get("/admin/batches/{batch_id}/import-template")
@@ -2418,11 +2535,10 @@ async def admin_export_attendance(request: Request, batch_id: int):
 
         try:
             file_bytes = excel_service.export_attendance(batch[2], formatted)
-            filename = f"attendance_{batch[2].replace(' ', '_')}.xlsx"
             return StreamingResponse(
                 io.BytesIO(file_bytes),
                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+                headers={"Content-Disposition": _export_content_disposition("attendance", batch[2], batch_id)}
             )
         except ImportError:
             flash(request, "openpyxl not installed on server.", "error")
@@ -2441,10 +2557,6 @@ async def admin_export_grades(request: Request, batch_id: int):
     conn = get_db()
     try:
         batch_svc = BatchService(conn)
-        grading_svc = GradingService(conn)
-        bonus_svc = BonusService(conn)
-        enroll_svc = BatchEnrollmentService(conn)
-
         batch = batch_svc.get_by_id(batch_id)
         if not batch:
             return RedirectResponse("/admin/courses" if user["role"] == "admin" else "/instructor/batches", status_code=302)
@@ -2453,26 +2565,14 @@ async def admin_export_grades(request: Request, batch_id: int):
             flash(request, "Not authorized to export grades for this batch.", "error")
             return RedirectResponse("/instructor/batches", status_code=302)
 
-        components = grading_svc.get_components(batch_id)
-        trainees = enroll_svc.get_batch_trainees(batch_id)
-        bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
-
-        trainee_grades = []
-        for t in trainees:
-            tid = t[0]
-            scores_raw = grading_svc.get_scores_for_trainee(batch_id, tid)
-            scores_dict = {s[0]: s[3] for s in scores_raw}
-            final = grading_svc.calculate_final_grade(batch_id, tid)
-            bonus = bonus_totals.get(tid, 0)
-            trainee_grades.append((tid, t[1], t[2], scores_dict, final, bonus))
+        components, _trainees, trainee_grades = _get_batch_grade_export_rows(conn, batch_id)
 
         try:
             file_bytes = excel_service.export_grades(batch[2], components, trainee_grades)
-            filename = f"grades_{batch[2].replace(' ', '_')}.xlsx"
             return StreamingResponse(
                 io.BytesIO(file_bytes),
                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+                headers={"Content-Disposition": _export_content_disposition("grades", batch[2], batch_id)}
             )
         except ImportError:
             flash(request, "openpyxl not installed.", "error")
@@ -2484,6 +2584,24 @@ async def admin_export_grades(request: Request, batch_id: int):
 # ══════════════════════════════════════════════════════════════════════════════
 # STUDENT — BATCH BROWSING & ENROLLMENT REQUESTS
 # ══════════════════════════════════════════════════════════════════════════════
+
+_TRAINEE_UI_MESSAGES = {
+    "Batch not found.": "لم نعثر على هذه الدفعة.",
+    "This batch is no longer accepting applications.": "لم تعد هذه الدفعة تستقبل طلبات الانضمام.",
+    "Trainee not found.": "لم نعثر على حساب المتدرب.",
+    "Deactivated trainees cannot submit enrollment requests.": "لا يمكن للحسابات الموقوفة إرسال طلبات الانضمام.",
+    "You are already enrolled in this batch.": "أنت مسجل بالفعل في هذه الدفعة.",
+    "You already have a pending request for this batch.": "لديك طلب قيد المراجعة لهذه الدفعة بالفعل.",
+    "Your request for this batch was already approved.": "تمت الموافقة على طلبك لهذه الدفعة مسبقًا.",
+    "You are not enrolled in this batch.": "أنت غير مسجل في هذه الدفعة.",
+    "Submission must include a URL or text.": "أضف رابط الحل أو اكتب نصه قبل الإرسال.",
+    "Task not found.": "لم نعثر على هذه المهمة.",
+    "Trainee is not enrolled in this batch.": "أنت غير مسجل في هذه الدفعة.",
+}
+
+
+def _trainee_ui_message(message):
+    return _TRAINEE_UI_MESSAGES.get(message, message)
 
 @app.get("/trainee/batches", response_class=HTMLResponse)
 async def trainee_batches(request: Request):
@@ -2500,7 +2618,7 @@ async def trainee_batches(request: Request):
         my_requests = req_svc.get_trainee_requests(user["id"])
 
         return render(request, "trainee/batches.html",
-                      page_title="My Batches",
+                      page_title="دفعاتي التدريبية",
                       active_page="batches",
                       my_batches=my_batches,
                       my_requests=my_requests)
@@ -2528,7 +2646,7 @@ async def trainee_browse_courses(request: Request):
             courses_with_batches.append((c, open_batches))
 
         return render(request, "trainee/browse.html",
-                      page_title="Browse Courses",
+                      page_title="استعراض الدورات",
                       active_page="browse",
                       courses_with_batches=courses_with_batches)
     finally:
@@ -2552,9 +2670,9 @@ async def trainee_request_enrollment(
         req_svc = EnrollmentRequestService(conn)
         try:
             req_svc.submit_request(batch_id, user["id"], trainee_note or None)
-            flash(request, "Enrollment request submitted! You will be notified once reviewed by admissions.", "success")
+            flash(request, "تم إرسال طلب الانضمام. سنُعلمك بعد مراجعته من قِبل إدارة القبول.", "success")
         except ValueError as e:
-            flash(request, str(e), "error")
+            flash(request, _trainee_ui_message(str(e)), "error")
 
         if return_to and return_to.startswith("/") and not return_to.startswith("//"):
             return RedirectResponse(return_to, status_code=302)
@@ -2579,7 +2697,7 @@ async def trainee_batch_progress(request: Request, batch_id: int):
         submission_svc = SubmissionService(conn)
 
         if not enroll_svc.is_enrolled(batch_id, user["id"]):
-            flash(request, "You are not enrolled in this batch.", "error")
+            flash(request, "أنت غير مسجل في هذه الدفعة.", "error")
             return RedirectResponse("/trainee/batches", status_code=302)
 
         batch = batch_svc.get_by_id(batch_id)
@@ -2601,7 +2719,7 @@ async def trainee_batch_progress(request: Request, batch_id: int):
         enrollment = enroll_svc.get_enrollment(batch_id, user["id"])
 
         return render(request, "trainee/batch_progress.html",
-                      page_title=f"Progress — {batch[2]}",
+                      page_title=f"متابعة الدفعة — {batch[2]}",
                       active_page="batches",
                       batch=batch,
                       attendance=attendance,
@@ -2738,15 +2856,10 @@ async def instructor_batch_grades(request: Request, batch_id: int):
         total_weight = grading_svc.get_total_weight(batch_id)
         trainees = enroll_svc.get_batch_trainees(batch_id)
         bonus_totals = bonus_svc.get_batch_bonus_totals(batch_id)
-
-        grades_summary = []
-        for t in trainees:
-            tid = t[0]
-            scores_raw = grading_svc.get_scores_for_trainee(batch_id, tid)
-            scores_dict = {s[0]: s[3] for s in scores_raw}
-            final = grading_svc.calculate_final_grade(batch_id, tid)
-            bonus = bonus_totals.get(tid, 0)
-            grades_summary.append((tid, t[1], t[2], scores_dict, final, bonus))
+        score_rows = grading_svc.get_all_scores_for_batch(batch_id)
+        grades_summary = excel_service.build_batch_grade_rows(
+            components, trainees, score_rows, bonus_totals
+        )
 
         return render(request, "admin/batch_grades.html",
                       page_title=f"Grades — {batch[2]}",
@@ -2825,9 +2938,9 @@ async def trainee_submit_task(
         try:
             sub_svc.submit(task_id, user["id"], batch_id=batch_id,
                            submission_url=url, submission_text=text)
-            flash(request, "Task solution submitted successfully!", "success")
+            flash(request, "تم إرسال حل المهمة بنجاح.", "success")
         except ValueError as e:
-            flash(request, str(e), "error")
+            flash(request, _trainee_ui_message(str(e)), "error")
         return RedirectResponse(f"/trainee/batches/{batch_id}/progress", status_code=302)
     finally:
         conn.close()
